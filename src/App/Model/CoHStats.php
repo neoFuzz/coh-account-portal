@@ -6,6 +6,10 @@ use Exception;
 use App\Util\Exec;
 use App\Util\SqlServer;
 
+function format_time($t, $f=':') {
+	return sprintf("%02d%s%02d%s%02d", floor($t/3600), $f, ($t/60)%60, $f, $t%60);
+}
+
 class CoHStats
 {
     protected $sql;
@@ -83,7 +87,7 @@ class CoHStats
                 return [
                     'status' => 'Online',
                     'started' => $stats['launchers'][0]['OnSince'],
-                    'uptime' => date('H:m:s', time() - strtotime($stats['launchers'][0]['OnSince']))
+                    'uptime' => format_time(time() - strtotime($stats['launchers'][0]['OnSince']))
                 ];
             } else {
                 return [
