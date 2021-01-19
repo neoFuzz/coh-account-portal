@@ -3,6 +3,8 @@
 USE [cohauth]
 GO
 
+CREATE UNIQUE INDEX AccountUID ON cohauth.dbo.user_account (uid);
+
 CREATE TABLE [dbo].[user_email](
 	[uid] [int] NOT NULL,
 	[email] [nvarchar](250) NULL,
