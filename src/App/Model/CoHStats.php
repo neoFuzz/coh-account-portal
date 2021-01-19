@@ -74,22 +74,39 @@ class CoHStats
 
     public function GetServerStatus()
     {
-        $cmd = getenv('dbquery').' -dbquery';
-
-        try {
-            $results = Exec::Exec($cmd, 5);
-
-            if (strlen($results) > 0) {
-                $uptime = explode(',', explode("\n", $results)[10]);
-
-                return ['status' => 'Online',
-                'uptime' => substr(trim($uptime[1].' '.$uptime[2]), 3),
-                'started' => trim(substr($uptime[0], 20)), ];
-            } else {
-                return ['status' => 'Offline'];
+        if (getenv('serverapi') && getenv('shardname')) {
+            $stats = json_decode(file_get_contents(getenv('serverapi') . getenv('shardname') . '/allstats'), true)[getenv('shardname')];
+            try {
+                // TODO: match uptime format to be same as DBQuery's output
+                // TODO: check all launchers and pick from the earliest OnSince date. Or get ServerAPI to return OnSince for DBServer
+                return [
+                    'status' => 'Online',
+                    'started' => $stats['launchers'][0]['OnSince'],
+                    'uptime' => date('H:m:s', time() - strtotime($stats['launchers'][0]['OnSince']))
+                ];
+            } catch (Exception $e) {
+                return ['status' => 'broken - '.$e->getMessage()];
             }
-        } catch (Exception $e) {
-            return ['status' => 'broken - '.$e->getMessage()];
+        } else if (getenv('dbquery')) {
+            $cmd = getenv('dbquery').' -dbquery';
+
+            try {
+                $results = Exec::Exec($cmd, 5);
+
+                if (strlen($results) > 0) {
+                    $uptime = explode(',', explode("\n", $results)[10]);
+
+                    return ['status' => 'Online',
+                    'uptime' => substr(trim($uptime[1].' '.$uptime[2]), 3),
+                    'started' => trim(substr($uptime[0], 20)), ];
+                } else {
+                    return ['status' => 'Offline'];
+                }
+            } catch (Exception $e) {
+                return ['status' => 'broken - '.$e->getMessage()];
+            }
         }
+
+        return ['status' => 'offline'];
     }
 }
