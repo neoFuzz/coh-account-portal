@@ -76,16 +76,19 @@ class CoHStats
     {
         if (getenv('serverapi') && getenv('shardname')) {
             $stats = json_decode(file_get_contents(getenv('serverapi') . getenv('shardname') . '/allstats'), true)[getenv('shardname')];
-            try {
+            if ($stats['status'] == "up") {
                 // TODO: match uptime format to be same as DBQuery's output
                 // TODO: check all launchers and pick from the earliest OnSince date. Or get ServerAPI to return OnSince for DBServer
+                // TODO: handle launchers being offline
                 return [
                     'status' => 'Online',
                     'started' => $stats['launchers'][0]['OnSince'],
                     'uptime' => date('H:m:s', time() - strtotime($stats['launchers'][0]['OnSince']))
                 ];
-            } catch (Exception $e) {
-                return ['status' => 'broken - '.$e->getMessage()];
+            } else {
+                return [
+                    'status' => 'Offline'
+                ];
             }
         } else if (getenv('dbquery')) {
             $cmd = getenv('dbquery').' -dbquery';
