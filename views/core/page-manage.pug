@@ -1,0 +1,16 @@
+doctype html
+html
+    head
+        title Manage Account
+    body
+        h1 Manage Account
+        p Username: #{username}
+        h2 Characters
+        ul
+            each character in characters
+                li= character
+        h2 Locked Characters
+        ul
+            each lockedCharacter in lockedCharacters
+                li= lockedCharacter
+        p Federation: #{federation}

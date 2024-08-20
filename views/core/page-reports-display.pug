@@ -1,0 +1,29 @@
+doctype html
+html
+    head
+        title= title
+    body
+        h1= title
+        // Display the results here
+        table
+            thead
+                tr
+                    each header, index in Object.keys(results[0] || {})
+                        th= header
+            tbody
+                each row in results
+                    tr
+                        each value in row
+                            td= value
+        // Display accounts and characters if applicable
+        if accounts.length > 0
+            select(name='account')
+                option(value='') Select Account
+                each account in accounts
+                    option(value=account.uid)= account.account_name
+
+        if characters.length > 0
+            select(name='character')
+                option(value='') Select Character
+                each character in characters
+                    option(value=character.ContainerId)= character.Name

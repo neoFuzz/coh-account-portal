@@ -1,0 +1,10 @@
+doctype html
+html
+    head
+        title Reports
+    body
+        h1 Reports
+        ul
+            each report in reports
+                li
+                    a(href=`/reports/${report.name}`)= report.name

@@ -1,0 +1,10 @@
+mixin serverStatus(portalName, status, accounts, characters)
+  .block
+    .blocktitle Welcome to #{portalName}!
+    .blockbody
+      if status.status === 'Online'
+        p Server started on #{status.started}, running for #{status.uptime}
+      else
+        p Server is currently #{status.status}.
+      
+      p There are #{accounts} registered accounts holding #{characters} characters.

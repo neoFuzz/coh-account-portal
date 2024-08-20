@@ -1,0 +1,8 @@
+extends layout
+
+include ./core/block-server-status.pug
+
+block body_content
+    h1= "Failure!"  
+    p "You need to try again"
+    p= message 

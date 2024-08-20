@@ -1,0 +1,31 @@
+extends layout
+
+include ./core/block-server-status.pug
+
+//- Define the mixin outside of any block
+mixin menuMacro(menu, level = 1)
+  ul(class=`menu-level--${level}`)
+    each item in menu
+      - const activeClass = item.active ? 'is-active' : ''
+      - const activeTrailClass = item.active_trail ? 'is-active-trail' : ''
+      li(class=`menu__item ${activeClass} ${activeTrailClass}`)
+        a.menu__link.navitem(href=item.url class=`${activeClass} ${activeTrailClass}`)= item.text
+        if item.submenu
+          +menuMacro(item.submenu, level + 1)
+
+block body_content
+  h1= title
+  p Welcome to #{title}
+  #logo
+    img(src=portal_url + "images/ouroborosLogo.png" width="409")
+  #content
+    table
+      tr
+        td(valign="top")
+          .nav
+            +menuMacro(menuTree)
+            br
+            include core/block-players-online.pug
+            include sidebar.pug
+        td(valign="top")
+          block content2

@@ -1,0 +1,19 @@
+.littleblock
+  .blocktitle
+    if portalLfgOnly
+      | #{online.List.length} Players LFG
+    else
+      | #{online.Count} Players Online
+  .blockbody.onlinelist
+    if portalLfgOnly
+      span #{online.Count} Players Online
+      br
+    
+    ul.onlinelist
+      each map in online.MapList
+        li
+          div= map
+          ul
+            each char in online.List
+              if char.MapName === map
+                li= char.Name

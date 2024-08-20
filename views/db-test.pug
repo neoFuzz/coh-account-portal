@@ -1,0 +1,13 @@
+html
+  head
+    meta(charset="UTF-8")
+    title= title
+    link(rel="shortcut icon" type="image/png" href="favicon.ico")
+    link(rel='stylesheet', href='/stylesheets/main.css')
+    link(rel='stylesheet', href='/stylesheets/freedom/style.css')
+    //- link(rel='stylesheet', href='/stylesheets/victory/style.css')
+    block additional_headers
+  body
+    h1= title
+    p Welcome to #{title}
+    div= db_content

@@ -8,3 +8,5 @@ federation.php
 /backups/*
 !.htaccess
 reports.user.php
+/node_modules/
+sessions

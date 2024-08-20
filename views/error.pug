@@ -1,0 +1,7 @@
+extends layout
+
+block body_content
+  div(style="background: black; padding: 1rem;border-radius: 1rem")
+    h1= message
+    h2= error.status
+    pre #{error.stack}
