@@ -3,29 +3,27 @@ extends ../layout
 include ./block-server-status.pug
 
 block body_content
-    h1 Create an Account
-    h1 Account Details
     div.block
-    div.blocktitle CREATE YOUR ACCOUNT
-    div.blockbody
-        //- Edit the create.html file to update with your own EULA, Terms of Service etc.
-        include ../create.html
-        form(method="post" action="/create")
-            table(width="100%")
-                tr
-                td(align="right")
-                    label(for="username") Your Username
-                    br
-                    small (maximum 14 characters; only letters and numbers)
-                td
-                    input(type="text" name="username")
-                tr
-                td(align="right")
-                    label(for="password") Your Password
-                    br
-                    small (8 to 16 characters)
-                td
-                    input(type="password" name="password")
-                tr
-                td(colspan="2" align="right")
-                    input(type="submit" name="create" value="Create Your Account")
+        div.blocktitle CREATE YOUR ACCOUNT
+        div.blockbody
+            //- Edit the create.html file to update with your own EULA, Terms of Service etc.
+            include ./html/create.html
+            form(method="post" action="/create")
+                table(width="100%")
+                    tr
+                    td(align="right")
+                        label(for="username") Your Username
+                        br
+                        small (maximum 14 characters; only letters and numbers)
+                    td
+                        input(type="text" name="username")
+                    tr
+                    td(align="right")
+                        label(for="password") Your Password
+                        br
+                        small (8 to 16 characters)
+                    td
+                        input(type="password" name="password")
+                    tr
+                    td(colspan="2" align="right")
+                        input(type="submit" name="create" value="Create Your Account")

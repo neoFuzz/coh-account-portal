@@ -1,5 +1,4 @@
 const GameAccount = require('../Model/gameAccount.js');
-const MonoLogger = require('../Util/MonoLogger');
 
 class GameAccountController {
     /**
@@ -10,7 +9,7 @@ class GameAccountController {
      * @returns {Promise<void>} - A promise that resolves when the account is created
      */
     async create(req, res) {
-        let log = MonoLogger.getLogger();
+        let log = global.appLogger;
         log.info(`Creating account: ${req.body.username} : on SessionID ${req.sessionID}`);
         try {
             const gameAccount = new GameAccount('');
@@ -18,9 +17,7 @@ class GameAccountController {
             req.session.account = gameAccount;
 
             log.info(`Account created: ${req.body.username}`);
-            //res.send(`Session ID: ${req.sessionID}`);
             res.render('page-create-account-success', { username: req.body.username });
-            //res.redirect('/create');
         } catch (error) {
             log.error(`Failed to create account: ${error.message}`);
             res.render('page-create-account-error', { message: error.message });
@@ -60,6 +57,7 @@ class GameAccountController {
     logout(req, res) {
         req.session.destroy(err => {
             if (err) {
+                global.appLogger.warn(`gameAccountController.logout: ${err.message}`);
                 return res.status(500).send('Unable to log out');
             }
             res.redirect('/');
@@ -75,12 +73,13 @@ class GameAccountController {
 
         try {
             await req.session.account.changePassword(req.body.password);
-
+            global.appLogger.info(`gameAccountController.changePassword: Password changed for ${req.session.account.username}`);
             res.render('page-generic-message', {
                 title: 'Success',
                 message: 'Successfully Changed Password'
             });
         } catch (error) {
+            global.appLogger.error(`gameAccountController.changePassword: Failed to change password: ${error.message}`);
             res.render('page-generic-message', {
                 title: 'Error',
                 message: error.message

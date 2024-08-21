@@ -54,6 +54,7 @@ class FederationController {
 
             return res.redirect(`${fedServer.Url}/federation/login?message=${encodeURIComponent(JSON.stringify(login))}`);
         } catch (error) {
+            global.appLogger.error(`federationController transferCharacterRequest: ${error}`);
             return res.render('core/page-generic-message.pug', {
                 title: 'An Error was encountered',
                 message: `${error.message}<br><pre>${error.stack}</pre>`
@@ -85,11 +86,17 @@ class FederationController {
                 return res.redirect(`${process.env.PORTAL_URL}login`);
             }
         } catch (err) {
-            console.log(err); // replace with our "MonoLogger"
+            global.appLogger.warn(err);
             return res.redirect(`${process.env.PORTAL_URL}login`);
         }
     }
 
+    /**
+     * Show the review policy page for the character transfer.
+     * @param {*} req HTTP request object
+     * @param {*} res HTTP response object
+     * @returns 
+     */
     async reviewPolicy(req, res) {
         if (!req.session.pullcharacter || !req.session.account) {
             throw new Error('Your session is not correct or has expired.');
@@ -178,12 +185,13 @@ class FederationController {
 
             // Put the character into the database
             await character.putCharacter();
-
+            global.appLogger.info(`${character.Name} has been transferred successfully!`);
             return res.render('core/page-generic-message.pug', {
                 title: `Welcome to ${process.env.PORTAL_NAME}`,
                 message: `${character.Name} has been transferred successfully!`
             });
         } catch (error) {
+            global.appLogger.error(`federationController pullcharacter: ${error}`);
             return res.render('core/page-generic-message.pug', {
                 title: 'An Error was encountered',
                 message: `${error.message}<br><pre>${error.stack}</pre>`
@@ -195,7 +203,8 @@ class FederationController {
         const connectionString = process.env.DB_CONNECTION;
 
         try {
-            await this.queryDatabase(connectionString, 'UPDATE cohdb.dbo.Ents2 SET AccSvrLock = null FROM cohdb.dbo.Ents INNER JOIN cohdb.dbo.Ents2 ON Ents.ContainerId = Ents2.ContainerId WHERE Ents.Name = ?', [decrypt(decodeURIComponent(req.body.character), process.env.PORTAL_KEY, process.env.PORTAL_IV)]);
+            await this.queryDatabase(connectionString, 'UPDATE cohdb.dbo.Ents2 SET AccSvrLock = null FROM cohdb.dbo.Ents INNER JOIN cohdb.dbo.Ents2 ON Ents.ContainerId = Ents2.ContainerId WHERE Ents.Name = ?',
+                [decrypt(decodeURIComponent(req.body.character), process.env.PORTAL_KEY, process.env.PORTAL_IV)]);
 
             if (!req.body.skipredirect) {
                 return res.redirect(`${process.env.PORTAL_URL}manage`);
@@ -203,6 +212,7 @@ class FederationController {
                 return res.status(200).send('Success');
             }
         } catch (error) {
+            global.appLogger.error(`federationController clearTransfer: ${error}`);
             return res.status(500).send(`Error: ${error.message}`);
         }
     }
@@ -211,6 +221,7 @@ class FederationController {
         return new Promise((resolve, reject) => {
             sql.query(connectionString, query, params, (err, rows) => {
                 if (err) {
+                    global.appLogger.error(`federationController queryDatabase: ${err}`);
                     return reject(err);
                 }
                 resolve(rows);

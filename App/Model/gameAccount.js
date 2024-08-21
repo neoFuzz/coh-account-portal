@@ -1,12 +1,14 @@
 const sql = require('msnodesqlv8');
 const DataHandling = require('../Util/dataHandling.js');
-//const MonoLogger = require('../Util/MonoLogger');
 const { promisify } = require('util');
 
 class GameAccount {
+    /**
+     * Constructor for the GameAccount class.
+     * 
+     * @param {string|number} username The user identifier to create the GameAccount object
+     */
     constructor(username) {
-        this.connectionString = process.env.DB_CONNECTION;
-        //this.logger = MonoLogger.getLogger();
         this.username = null;
         this.uid = null;
         this.lastIp = null;
@@ -21,10 +23,11 @@ class GameAccount {
     }
 
     executeQuery(query, params = []) {
+        let logger = global.appLogger;
         return new Promise((resolve, reject) => {
-            sql.query(this.connectionString, query, params, (err, rows) => {
+            sql.query(process.env.DB_CONNECTION, query, params, (err, rows) => {
                 if (err) {
-                    //this.logger.error('SQL error:', err);
+                    logger.error('SQL error:', err);
                     return reject(err);
                 }
                 resolve(rows);
@@ -75,13 +78,14 @@ class GameAccount {
     }
 
     async create(username, password) {
+        let logger = global.appLogger;
         DataHandling.validateUsername(username);
         DataHandling.validatePassword(password);
 
         const connection = promisify(sql.open);
         let conn;
         try {
-            conn = await connection(this.connectionString);
+            conn = await connection(process.env.DB_CONNECTION);
 
             // Check username uniqueness
             const usernameCheckQuery = 'SELECT 1 FROM cohauth.dbo.user_account WHERE UPPER(account) = UPPER(?)';
@@ -123,7 +127,7 @@ class GameAccount {
             if (conn) {
                 await promisify(conn.rollback.bind(conn))();
             }
-            //this.logger.error('Error creating account:', err);
+            logger.error('Error creating account:', err);
             let message = err.message === "taken" ?
                 "The account name you entered has already been taken." :
                 "Unable to create your account; something went wrong.";
@@ -154,7 +158,7 @@ class GameAccount {
                 this.lastLogin = row.last_login;
                 this.lastLogout = row.last_logout;
             } else {
-                //this.logger.info(`Failed login for account ${username}`);
+                global.appLogger.info(`Failed login for account ${username}`);
                 throw new Error('That username and password does not match our records.');
             }
         } catch (error) {

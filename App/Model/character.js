@@ -33,7 +33,7 @@ class Character {
 
     execCommand(cmd, timeout = 5000) {
         try {
-            return execSync(cmd, { timeout }).toString();
+            return execSync(cmd, { timeout, stdio: ['pipe', 'pipe', 'ignore'] }).toString();
         } catch (error) {
             throw new Error(`Command failed: ${cmd}\n${error.message}`);
         }

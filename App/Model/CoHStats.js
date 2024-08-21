@@ -52,7 +52,7 @@ class CoHStats {
 
       const mapName = {}; // You need to implement map name mapping
       const onlineList = rows
-        .filter(row => row.AccessLevel < process.env.PORTAL_HIDE_CSR && 
+        .filter(row => row.AccessLevel < process.env.PORTAL_HIDE_CSR &&
           (process.env.PORTAL_LFG_ONLY !== 'true' || row.LfgFlags && row.LfgFlags !== 0 && row.LfgFlags !== 128))
         .map(row => ({
           ...row,
@@ -87,7 +87,8 @@ class CoHStats {
     } else if (process.env.DBQUERY) {
       try {
         const cmd = `${process.env.DBQUERY} -dbquery`;
-        const results = execSync(cmd, { timeout: 5000 }).toString();
+        global.appLogger.info("Running command: " + cmd);
+        const results = execSync(cmd, { timeout: 5000, stdio: ['pipe', 'pipe', 'ignore'] }).toString();
         if (results.length > 0) {
           const uptime = results.split('\n')[10].split(',');
           return {
@@ -96,6 +97,7 @@ class CoHStats {
             started: uptime[0].trim().substring(20)
           };
         } else {
+          global.appLogger.info("server offline");
           return { status: 'Offline' };
         }
       } catch (error) {

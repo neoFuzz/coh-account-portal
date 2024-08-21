@@ -1,0 +1,87 @@
+ul.character
+  each character in characters
+    li
+      // Alignment
+      - let PlayerType = 0;
+      - let PlayerSubType = 0;
+      - let PlayerPraetorian = 0;
+
+      if character.PlayerType !== undefined
+        - PlayerType = character.PlayerType;
+        
+      if character.PlayerSubType !== undefined
+        - PlayerSubType = character.PlayerSubType;
+        
+      if character.PraetorianProgress !== undefined
+        - PlayerPraetorian = character.PraetorianProgress;
+
+      if PlayerPraetorian == 1
+        img(src=`${portal_url}images/icons/alignment/neutral.png` alt="Neutral")
+      else if PlayerPraetorian == 2
+        if PlayerType == 0
+          img(src=`${portal_url}images/icons/alignment/resistance.png` alt="Praetorian Resistance")
+        if PlayerType == 1
+          img(src=`${portal_url}images/icons/alignment/loyalist.png` alt="Praetorian Loyalist")
+      else if PlayerPraetorian == 6
+        img(src=`${portal_url}images/icons/alignment/neutral.png` alt="Neutral")
+      else
+        if PlayerType == 0 && PlayerSubType == 0
+          img(src=`${portal_url}images/icons/alignment/hero.png` alt="Hero")
+        if PlayerType == 0 && PlayerSubType == 1
+          img(src=`${portal_url}images/icons/alignment/hero.png` alt="Paragon")
+        if PlayerType == 0 && PlayerSubType == 2
+          img(src=`${portal_url}images/icons/alignment/vigilante.png` alt="Vigilante")
+        if PlayerType == 1 && PlayerSubType == 0
+          img(src=`${portal_url}images/icons/alignment/villain.png` alt="Villain")
+        if PlayerType == 1 && PlayerSubType == 1
+          img(src=`${portal_url}images/icons/alignment/villain.png` alt="Tyrant")
+        if PlayerType == 1 && PlayerSubType == 2
+          img(src=`${portal_url}images/icons/alignment/rogue.png` alt="Rogue")
+
+      // Class
+      if character.ClassName == 'class_blaster'
+        img(src=`${portal_url}images/icons/archetype/blaster.png` alt="Blaster")
+      if character.ClassName == 'class_controller'
+        img(src=`${portal_url}images/icons/archetype/controller.png` alt="Controller")
+      if character.ClassName == 'class_defender'
+        img(src=`${portal_url}images/icons/archetype/defender.png` alt="Defender")
+      if character.ClassName == 'class_scrapper'
+        img(src=`${portal_url}images/icons/archetype/scrapper.png` alt="Scrapper")
+      if character.ClassName == 'class_tanker'
+        img(src=`${portal_url}images/icons/archetype/tanker.png` alt="Tanker")
+      if character.ClassName == 'class_mastermind'
+        img(src=`${portal_url}images/icons/archetype/mastermind.png` alt="Mastermind")
+      if character.ClassName == 'class_stalker'
+        img(src=`${portal_url}images/icons/archetype/stalker.png` alt="Stalker")
+      if character.ClassName == 'class_brute'
+        img(src=`${portal_url}images/icons/archetype/brute.png` alt="Brute")
+      if character.ClassName == 'class_dominator'
+        img(src=`${portal_url}images/icons/archetype/dominator.png` alt="Dominator")
+      if character.ClassName == 'class_corruptor'
+        img(src=`${portal_url}images/icons/archetype/corruptor.png` alt="Corruptor")
+      if character.ClassName == 'class_warshade'
+        img(src=`${portal_url}images/icons/archetype/warshade.png` alt="Warshade")
+      if character.ClassName == 'class_peacebringer'
+        img(src=`${portal_url}images/icons/archetype/peacebringer.png` alt="Peacebringer")
+      if character.ClassName == 'class_arachnos_soldier'
+        img(src=`${portal_url}images/icons/archetype/arachnos_soldier.png` alt="Arachnos Soldier")
+      if character.ClassName == 'class_arachnos_widow'
+        img(src=`${portal_url}images/icons/archetype/arachnos_widow.png` alt="Arachnos Widow")
+      if character.ClassName == 'class_sentinel'
+        img(src=`${portal_url}images/icons/archetype/sentinel.png` alt="Sentinel")
+
+      // Origin
+      if character.OriginName == 'science'
+        img(src=`${portal_url}images/icons/origin/science.png` alt="Science")
+      if character.OriginName == 'mutation'
+        img(src=`${portal_url}images/icons/origin/mutation.png` alt="Mutation")
+      if character.OriginName == 'magic'
+        img(src=`${portal_url}images/icons/origin/magic.png` alt="Magic")
+      if character.OriginName == 'technology'
+        img(src=`${portal_url}images/icons/origin/technology.png` alt="Technology")
+      if character.OriginName == 'natural'
+        img(src=`${portal_url}images/icons/origin/natural.png` alt="Natural")
+
+      a(href=`./api/character/raw?q=${character.datauri}`) #{character.Name}
+
+      | #{maplist[character.StaticMapId]}

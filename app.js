@@ -9,7 +9,6 @@ const MonoLogger = require('./App/Util/MonoLogger');
 const Redis = require('redis');
 const RedisStore = require('connect-redis').default;
 const SQLiteStore = require('connect-sqlite3')(session);
-const sqlite3 = require('better-sqlite3');
 let favicon = require('serve-favicon');
 let cookieParser = require('cookie-parser');
 let bodyParser = require('body-parser');
@@ -20,11 +19,16 @@ let app = express();
 let PORT = process.env.PORT || 3000;
 
 // Create a Winston logger instance
+const customFormat = winston.format.printf(({ timestamp, level, message }) => {
+    return `${timestamp} ${level}: ${message}`;
+});
+
 const logger = winston.createLogger({
     level: 'info',
     format: winston.format.combine(
         winston.format.colorize(),
-        winston.format.simple()
+        winston.format.timestamp(), // Adds the timestamp
+        customFormat
     ),
     transports: [
         new winston.transports.Console()
@@ -33,8 +37,9 @@ const logger = winston.createLogger({
 
 // Set the logger instance in MonoLogger
 MonoLogger.setLogger(logger);
-const appLogger = MonoLogger.getLogger();
-appLogger.info('Logger is successfully set up!');
+global.appLogger = MonoLogger.getLogger();
+global.appLogger.info('Logger is successfully set up!');
+const appLogger = global.appLogger;
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -94,9 +99,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 //app.use(express.urlencoded({ extended: true }));
 
 // Map routes dynamically. Saves adding each new page in.
+appLogger.info('Mapping routes...');
+
 for (let i in routes) {
+    appLogger.info('Mapping route ' + i);
     app.use('/', routes[i]);
 }
+
+// set up server federation
+appLogger.info("Initiating server federation...");
+global.federation = require('./federation-config.js');
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -130,7 +142,7 @@ app.use(function (err, req, res, next) {
 });
 
 app.set('port', PORT);
-
+global.appLogger.info("Web server is ready on port " + PORT);
 let server = app.listen(app.get('port'), function () {
     debug('Express server listening on port ' + server.address().port);
 });

@@ -1,6 +1,7 @@
 const CoHStats = require('../Model/CoHStats');
-const MenuController = require('./menuController');
+const GameAccount = require('../Model/gameAccount.js');
 const Maps = require('../Model/maps');
+const MenuController = require('./menuController.js');
 
 class StaticController {
     constructor(container) {
@@ -29,12 +30,14 @@ class StaticController {
                 maplist: online.MapList,
                 accounts: accounts,
                 characters: characters,
-                status: status
+                status: status,
+                username: req.session.account?.username || null,
             };
-
+            // maybe extra logging here, unsure? //global.appLogger.info(`StaticController.home(): ${JSON.stringify(data.status)}`);
             res.render('index', data);
         } catch (err) {
             // Handle error
+            global.appLogger.error(`StaticController.home(): ${err}`);
             res.status(500).send('Internal Server Error');
         }
     }
@@ -50,15 +53,19 @@ class StaticController {
         }
 
         try {
-            const account = req.session.account;
+            const account = new GameAccount(`${req.session.account.username}`);
+            //account.username = req.session.account.username;
+            await account.fetchAccountByUsername(req.session.account.username);
             res.render('core/page-manage', {
                 username: account.username,
                 characters: account.getCharacterList(),
                 lockedCharacters: account.getLockedCharacters(),
                 federation: global.federation // Ensure this is set somewhere in your app
             });
+            global.appLogger.info(`StaticController.manage(): ${account.username} logged in`);
         } catch (err) {
             // Handle error
+            global.appLogger.error(`StaticController.manage(): ${err}`);
             res.status(500).send('Internal Server Error');
         }
     }
@@ -69,6 +76,7 @@ class StaticController {
         try {
             res.render(`core/${page}`);
         } catch (err) {
+            global.appLogger.error(`StaticController.page(): ${err}`);
             // Handle 404
             res.status(404).render('core/404'); // Ensure you have a 404 template
         }

@@ -1,0 +1,27 @@
+extends layout
+
+block body_content
+    if message
+        include core/block-generic.pug
+
+    .block
+        .blocktitle
+            | Login to #{portal_name}
+        .blockbody
+            p You are logging into #{portal_name}. Please enter your username and password below.
+            form(method='post', action='login')
+                table(width='100%')
+                    tr
+                        td.align-right
+                            label(for='username') Your Username
+                        td
+                            input(type='text', name='username')
+                    tr
+                        td.align-right
+                            label(for='password') Your Password
+                        td
+                            input(type='password', name='password')
+                    tr
+                        td(colspan='2', align='right')
+                            input(type='submit', name='login', value='Login')
+                input(type='hidden', name='nextpage', value=nextpage)
