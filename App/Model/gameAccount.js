@@ -115,14 +115,14 @@ class GameAccount {
 
             // SQL statements to execute
             const sql1 = 'INSERT INTO cohauth.dbo.user_account (account, uid, forum_id, pay_stat) VALUES (?, ?, ?, 1014)';
-            const sql2 = 'INSERT INTO cohauth.dbo.user_auth (account, password, salt, hash_type) VALUES (?, CONVERT(BINARY(128),?), 0, 1)';
+            const sql2 = `INSERT INTO cohauth.dbo.user_auth (account, password, salt, hash_type) VALUES (?, CONVERT(BINARY(128),${hash}), 0, 1)`;
             const sql3 = 'INSERT INTO cohauth.dbo.user_data (uid, user_data) VALUES (?, CONVERT(binary(16), ?, 1))';
             const sql4 = 'INSERT INTO cohauth.dbo.user_server_group (uid, server_group_id) VALUES (?, 1)';
 
             // Insert database data
             await promisify(conn.beginTransaction.bind(conn))();
             await promisify(conn.query.bind(conn))(sql1, [username, uid, uid]);
-            await promisify(conn.query.bind(conn))(sql2, [username, hash]);
+            await promisify(conn.query.bind(conn))(sql2, [username]);
             await promisify(conn.query.bind(conn))(sql3, [uid, binaryData]);
             await promisify(conn.query.bind(conn))(sql4, [uid]);
             await promisify(conn.commit.bind(conn))();
@@ -178,8 +178,8 @@ class GameAccount {
             DataHandling.validatePassword(newPassword);
             const hash = `${DataHandling.binPassword(this.username, newPassword)}`;
             await this.executeQuery(
-                'UPDATE cohauth.dbo.user_auth SET password = CONVERT(BINARY(128),?) WHERE UPPER(account) = UPPER(?)',
-                [hash, this.username]
+                `UPDATE cohauth.dbo.user_auth SET password = CONVERT(BINARY(128), '${hash}') WHERE UPPER(account) = UPPER(?)`,
+                [this.username]
             );
         } catch (error) {
             throw new Error('Error changing password');

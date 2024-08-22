@@ -54,10 +54,10 @@ class DataHandling {
         authname = authname.toLowerCase();
         const a32 = DataHandling.adler32(authname);
         const a32hex = a32.toString(16).padStart(8, '0');
-        const reversedA32hex = a32hex.slice(6, 2) + a32hex.slice(4, 2) + a32hex.slice(2, 2) + a32hex.slice(0, 2);
+        const reversedA32hex = a32hex.slice(6) + a32hex.slice(4, 6) + a32hex.slice(2, 4) + a32hex.slice(0, 2);
         const hash = crypto.createHash('sha512');
         hash.update(`${password}${reversedA32hex}`);
-        return hash.digest();
+        return Buffer.from(hash.digest(), 'hex');
     }
 
     static binPassword(authname, password) {
