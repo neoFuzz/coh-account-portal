@@ -108,14 +108,14 @@ class GameAccount {
                 uid = 10;
             }
 
-            const hash = DataHandling.hashPassword(username, password);
+            const hash = DataHandling.binPassword(username, password);
 
             // Convert hexadecimal string to a binary buffer (ensure length matches binary(16))
             const binaryData = Buffer.from(process.env.user_data.substring(2), 'hex');
 
             // SQL statements to execute
             const sql1 = 'INSERT INTO cohauth.dbo.user_account (account, uid, forum_id, pay_stat) VALUES (?, ?, ?, 1014)';
-            const sql2 = `INSERT INTO cohauth.dbo.user_auth (account, password, salt, hash_type) VALUES (?, CONVERT(BINARY(128),${hash}), 0, 1)`;
+            const sql2 = `INSERT INTO cohauth.dbo.user_auth (account, password, salt, hash_type) VALUES (?, CONVERT(BINARY(128),'${hash}'), 0, 1)`;
             const sql3 = 'INSERT INTO cohauth.dbo.user_data (uid, user_data) VALUES (?, CONVERT(binary(16), ?, 1))';
             const sql4 = 'INSERT INTO cohauth.dbo.user_server_group (uid, server_group_id) VALUES (?, 1)';
 
