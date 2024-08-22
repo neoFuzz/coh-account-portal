@@ -10,7 +10,7 @@ router.get('/admin/:uid', AdminController.adminAccount);
 
 // Other routes ChatGPT came up with
 router.get('/admin', AdminController.adminPage);
-router.get('/list-account', AdminController.listAccount);
+router.get('/admin/list/account', AdminController.listAccount);
 router.get('/admin-account/:uid', AdminController.adminAccount);
 router.get('/list-character/:uid', AdminController.listCharacter);
 

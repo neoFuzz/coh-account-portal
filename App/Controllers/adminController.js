@@ -1,16 +1,36 @@
 const sql = require('msnodesqlv8');
+const GameAccount = require('../Model/gameAccount.js');
+const DataTable = require('../Model/dataTable.js');
 
 // Configure database connection
 const dbConfig = process.env.DB_CONNECTION;
 
 class AdminController {
+    static async adminCheck(req, res) {
+        try {
+            await AdminController.verifyLogin(req);
+        } catch (error) {
+            res.render('page-generic-message',
+                { title: "Admin access denied", message: error.message });
+            return false;
+        }
+        return true;
+    }
     static async adminPage(req, res) {
-        AdminController.verifyLogin(req);
+        if (!AdminController.adminCheck(req, res)) {
+            return;
+        }
         res.render('page-admin'); // 'views/page-admin.pug'
     }
 
     static async listAccount(req, res) {
-        AdminController.verifyLogin(req);
+        try {
+            await AdminController.verifyLogin(req);
+        } catch (error) {
+            res.render('page-generic-message',
+                { title: "Admin access denied", message: error.message });
+            return;
+        }
 
         const query = `
             SELECT
@@ -44,35 +64,37 @@ class AdminController {
             ) char_count ON user_account.uid = char_count.AuthId
         `;
 
-        sql.query(dbConfig, query, (err, rows) => {
+        // Create an instance of DataTable with the base query
+        const dataTable = new DataTable(query, []);
+
+        // Use DataTable to handle the request and get the response
+        dataTable.getJSON(req, (err, result) => {
             if (err) {
-                console.error(err);
+                console.error('DataTable error:', err);
                 res.status(500).send('An error occurred');
                 return;
             }
-            res.json(rows);
+            res.json(result);
         });
     }
 
     static async adminAccount(req, res) {
-        AdminController.verifyLogin(req);
-        const { uid } = req.params;
+        try {
+            await AdminController.verifyLogin(req);
 
-        const query = 'SELECT * FROM your_table WHERE uid = ?';
-        sql.query(dbConfig, query, [uid], (err, rows) => {
-            if (err) {
-                console.error(err);
-                res.status(500).send('An error occurred');
-                return;
-            }
+            const uid = req.session.account.uid;
+            const account = new GameAccount()
+            await account.fetchAccountByUid(uid);
 
-            const account = rows[0]; // Assuming the account is in the first row
-
-            res.render('page-admin-account', {
-                username: account.username,
+            // Render the Pug template with account data
+            res.render('core/page-admin-account', {
+                username: account.username, // Assuming GetUsername is async
                 uid: account.uid
             });
-        });
+        } catch (error) {
+            console.error('Error fetching account details:', error);
+            res.status(500).send('Internal Server Error');
+        }
     }
 
     static async listCharacter(req, res) {
@@ -104,12 +126,15 @@ class AdminController {
         });
     }
 
-    static verifyLogin(req) {
+    static async verifyLogin(req) {
         if (!req.session.account) {
             throw new Error('You must be logged in to access this page.');
         }
 
-        if (!req.session.account.isAdmin) {
+        const ga = new GameAccount();
+        await ga.fetchAccountByUsername(req.session.account.username);
+
+        if (!ga.isAdmin()) {
             throw new Error('You must be an administrator to access this page.');
         }
     }

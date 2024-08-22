@@ -16,11 +16,11 @@ This implementation intends to be more standalone over it's PHP predecessor.
 
 * Download and extract this repository's files into into a folder of your choice.
 
-* Open the command line, navigate to the root directory of this `npm install`. This will download required dependencies.
+* Open the command line, navigate to the directory where you extracted the repository and run `npm install`. This will download required dependencies.
 
-* Configuration is stored in `.env` file. Edit the file and update some of the values. Just put some random typing as your KEY and IV values.
+* Configuration is stored in the `.env` file. Edit the file and update some of the values. Just put some random typing as your KEY and IV values.
 
-* run the server with `npm run start`
+* Run the Account Portal web server with `npm run start`
 
 # Recommendations
 
@@ -30,14 +30,20 @@ This implementation intends to be more standalone over it's PHP predecessor.
 
 Website content can be found in the `\templates` directory. Rename the .example files by removing the extension '.example'. Then customize to taste.
 
-* create.phtml is displayed as text above the create your account form. Use this for EULA, rules, etc.
-* index.phtml lets you customize your main index page. If you do not have this file, a default server status message will be displayed instead.
-* menuitems.phtml allows you to add additional menu items to the bottom of the main menu.
+* create.html is displayed as text above the create your account form. Use this for EULA, rules, etc.
+* index.html lets you customize your main index page. If you do not have this file, a default server status message will be displayed instead.
+* menuitems.html allows you to add additional menu items to the bottom of the main menu.
+
+**Key item to note:** Any changes to `.pug`, `html`, `css` or image files will take affect immediately upon saving it. Only code changes require a service restart (usually changes to the `.js` files).
 
 # Upgrade Guide
 
-No upgrade info at this time.
-* TBA
+No real upgrade information at this time. These steps are rather crude at this moment.
+
+1. First back up your `.env` file. You don't want to loose your setup.
+2. Download the repository again over the top of the existing files or `git update`
+3. run `npm install` to update dependencies.
+4. run `npm run start` to start the Account Portal
 
 # Support
 

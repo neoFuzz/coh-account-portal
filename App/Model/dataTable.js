@@ -1,19 +1,14 @@
-// May need this later: const sql = require('../App/Util/SqlServer.js');
-
 const sql = require('msnodesqlv8');
+const { URLSearchParams } = require('url');
 
-/**
- * Class representing a data table.
- * @class
- */
 class DataTable {
     constructor(query = '', params = []) {
-        this.connectionString = process.env.DB_CONNECTION;
+        this.connectionString = process.env.DB_CONNECTION; // Ensure this environment variable is set
         this.query = query;
         this.params = params;
     }
 
-    executeQuery(query, params = [], callback) {
+    executeQuery(query, params, callback) {
         sql.query(this.connectionString, query, params, (err, rows) => {
             if (err) {
                 console.error('SQL error:', err);
@@ -24,62 +19,63 @@ class DataTable {
         });
     }
 
-    getColumns(callback) {
-        const baseQuery = 'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?';
-        this.executeQuery(baseQuery, [this.tableName], (err, rows) => {
+    async getColumns(tableName, callback) {
+        const query = 'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?';
+        this.executeQuery(query, [tableName], (err, rows) => {
             if (err) return callback(err, null);
             callback(null, rows);
         });
     }
 
-    getJSON(req, callback) {
-        const baseQuery = 'SELECT * FROM your_table'; // Replace with your actual base query
-        let query = baseQuery;
-        let params = [...this.params];
-        const requestParams = req.query;
+    async getJSON(req, callback) {
+        const urlParams = new URLSearchParams(req.query);
+        const searchValue = urlParams.get('search[value]') || '';
+        const orderColumn = urlParams.get('order[0][column]') || 0;
+        const orderDir = urlParams.get('order[0][dir]') || 'asc';
+        const start = parseInt(urlParams.get('start'), 10) || 0;
+        const length = parseInt(urlParams.get('length'), 10) || 10;
 
-        // Construct the WHERE clause
-        if (requestParams?.search?.value) {
-            let whereClauses = params.map((_, index) => `column${index + 1} LIKE ?`).join(' OR ');
-            query += ` WHERE ${whereClauses}`;
-            params.push(...Array(params.length).fill(`%${requestParams.search.value}%`));
+        let params = [...this.params];
+        let query = this.query;
+
+        // Construct WHERE clause
+        if (searchValue) {
+            const whereClauses = [];
+            this.query.split('FROM')[1].split('WHERE')[0].split(',').forEach((column, index) => {
+                whereClauses.push(`${column.trim()} LIKE ?`);
+                params.push(`%${searchValue}%`);
+            });
+            query += ' WHERE ' + whereClauses.join(' OR ');
         }
 
         // Add ORDER BY clause
-        if (requestParams.order && requestParams.order.length > 0) {
-            const column = requestParams.order[0].column;
-            const dir = requestParams.order[0].dir.toUpperCase();
-            query += ` ORDER BY column${column + 1} ${dir}`;
-        }
+        query += ` ORDER BY ${orderColumn + 1} ${orderDir.toUpperCase()}`;
 
         // Add OFFSET and FETCH for pagination
-        if (requestParams.start && requestParams.length) {
-            query += ` OFFSET ${requestParams.start} ROWS FETCH NEXT ${requestParams.length} ROWS ONLY`;
-        }
+        query += ` OFFSET ${start} ROWS FETCH NEXT ${length} ROWS ONLY`;
 
         // Count total records
-        this.executeQuery(`SELECT COUNT(*) as num FROM (${baseQuery}) as tb`, [], (err, countResult) => {
+        const countQuery = `SELECT COUNT(*) as num FROM (${this.query}) as tb`;
+        this.executeQuery(countQuery, this.params, (err, countResult) => {
             if (err) return callback(err, null);
 
             const recordsTotal = countResult[0].num;
-            const recordsFiltered = recordsTotal; // Assume no filtering initially
+            let recordsFiltered = recordsTotal;
 
             // Fetch records
             this.executeQuery(query, params, (err, records) => {
                 if (err) return callback(err, null);
 
-                const response = {
-                    draw: parseInt(requestParams.draw) || 0,
+                if (searchValue) {
+                    recordsFiltered = records.length;
+                }
+
+                callback(null, {
+                    draw: parseInt(urlParams.get('draw'), 10) || 0,
                     recordsTotal: recordsTotal,
                     recordsFiltered: recordsFiltered,
                     data: records
-                };
-
-                if (requestParams?.search?.value) {
-                    response.recordsFiltered = records.length;
-                }
-
-                callback(null, response);
+                });
             });
         });
     }

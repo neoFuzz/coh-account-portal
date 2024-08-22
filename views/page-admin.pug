@@ -1,0 +1,76 @@
+extends layout
+
+//- Additional headers block
+block additional_headers
+  - let portal_url = '/'
+  link(rel='stylesheet', type='text/css', href=`${portal_url}vendor/jquery/jquery-ui.min.css`)
+  link(rel='stylesheet', type='text/css', href=`${portal_url}vendor/datatables/datatables.min.css`)
+  script(type='text/javascript', src=`${portal_url}vendor/jquery/jquery-3.4.1.min.js`)
+  script(type='text/javascript', src=`${portal_url}vendor/jquery/jquery-ui.min.js`)
+  script(type='text/javascript', src=`${portal_url}vendor/datatables/datatables.min.js`)
+  script(type='text/javascript', src=`${portal_url}vendor/moment/moment.js`)
+  script(type='text/javascript', src=`${portal_url}vendor/datatables/datetime-moment.js`)
+
+//- Content block
+block body_content
+
+ #content
+  .block
+    .blocktitle List of Accounts
+    .blockbody
+      table#account-list.display.table(width='1200')
+        thead
+          tr
+            th UID
+            th Account Name
+            th Banned
+            th Ban Expiry
+            th Last Login
+            th Last IP
+            th Inf
+            th # Characters
+            th Online
+            th Online Time (this session)
+            th Online Time (total)
+            th
+        tfoot
+          tr
+            th UID
+            th Account Name
+            th Banned
+            th Ban Expiry
+            th Last Login
+            th Last IP
+            th Inf
+            th # Characters
+            th Online
+            th Online Time (this session)
+            th Online Time (total)
+            th
+
+  script(type='text/javascript').
+    $.fn.dataTable.moment('MM/DD/YYYY');
+    let portal_url = "/"
+
+    $(document).ready(function() {
+        var dt = $('#account-list').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: `${portal_url}admin/list/account`,
+            order: [[1, 'asc']],
+            columnDefs: [
+                { targets: [3, 4, 5, 7], render: function(data, type, row, meta) { return data == null ? '-' : data; }},
+                { targets: 6,
+                    render: function (data, type, row, meta) {
+                        if (data === null) { return '-'; }
+                        return data.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,'); }
+                },
+                { targets: [9,10], width: 75, render: function (data, type, row, meta) { return data == null ? '-' : moment.duration(data, 'seconds').humanize(); }},
+                { targets: 11,
+                    render: function (data, type, row, meta) { return `<a href='${portal_url}admin/" + row[0] + "'><button>Open</button></a>"`; },
+                    searchable: false,
+                    orderable: false,
+                },
+            ]
+        });
+    });
