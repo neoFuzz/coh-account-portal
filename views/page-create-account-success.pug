@@ -3,5 +3,11 @@ extends layout
 include ./core/block-server-status.pug
 
 block body_content
-    h1= "Success!"
-    p You can use your new username #{username} and password to log in to the game
+  #content
+    .block
+        .blocktitle
+            | Success!
+        .blockbody
+            p You can use your new username #{username} and password to log in to the game
+            p Proceed to 
+              a(href="/login") login

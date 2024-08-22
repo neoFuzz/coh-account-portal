@@ -1,9 +1,9 @@
 //const sql = require('msnodesqlv8');
 const path = require('path');
 const { decrypt } = require('../Util/dataHandling');
-const { Character } = require('../Model/character');
-const { Message } = require('../Util/message');
-const { SqlServer } = require('../Util/SqlServer');
+const Character = require('../Model/character');
+const Message = require('../Util/message');
+const SqlServer = require('../Util/SqlServer');
 const fs = require('fs');
 const { promisify } = require('util');
 
@@ -13,10 +13,11 @@ class APIController {
     static async getCharacter(req, res) {
         try {
             const characterName = decrypt(req.query.q, process.env.PORTAL_KEY, process.env.PORTAL_IV);
-            const character = new Character(characterName);
+            const character = new Character();
+            await character.loadCharacter(characterName);
 
             if (req.query.type === 'json') {
-                res.json(character.toJSON());
+                res.json(character.attributes);
             } else {
                 res.type('text/plain');
                 res.send(character.toArray().join('\n'));
@@ -39,7 +40,7 @@ class APIController {
             const sql = new SqlServer(process.env.DB_CONNECTION);
 
             // Fetch AuthId and ContainerId
-            const [rows] = await sql.dbquery(
+            const [rows] = sql.dbquery(
                 'SELECT AuthId, ContainerId FROM cohdb.dbo.Ents WHERE Name = ?',
                 [characterName]
             );

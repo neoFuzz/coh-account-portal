@@ -1,7 +1,5 @@
 'use strict';
-
 const sql = require('msnodesqlv8');
-const util = require('util');
 
 class SqlServer {
     constructor(connectionString) {

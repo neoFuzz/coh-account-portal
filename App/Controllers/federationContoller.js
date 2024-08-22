@@ -31,7 +31,8 @@ class FederationController {
             const containerId = await this.queryDatabase(connectionString, 'SELECT ContainerId FROM cohdb.dbo.Ents WHERE Name = ?', [characterName]);
 
             // If the character is locked for transfer already, abort
-            const isLocked = await this.queryDatabase(connectionString, 'SELECT AccSvrLock FROM cohdb.dbo.Ents2 WHERE ContainerId = ? AND AccSvrLock IS NOT NULL', [containerId]);
+            const isLocked = await this.queryDatabase(connectionString,
+                 'SELECT AccSvrLock FROM cohdb.dbo.Ents2 WHERE ContainerId = ? AND AccSvrLock IS NOT NULL', [containerId]);
             if (isLocked.length > 0) {
                 return res.render('core/page-generic-message.pug', {
                     title: 'Character Locked',
@@ -78,9 +79,9 @@ class FederationController {
                 req.session.account = gameAccount;
                 req.session.pullcharacter = { character: message.character, from: message.from };
 
-                return res.redirect('review-policy');
+                return res.redirect('/federation/review-policy'); // TODO: check in testing
             } else {
-                req.session.nextpage = 'federation/review-policy';
+                req.session.nextpage = '/federation/review-policy';
                 req.session.pullcharacter = { character: message.character, from: message.from };
 
                 return res.redirect(`${process.env.PORTAL_URL}login`);

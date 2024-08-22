@@ -25,8 +25,13 @@ a:hover {
 }
 
 #content {
-  width: 715px;
-  margin: 0 auto;
+  width: 100%;
+  /*margin: 0 auto;*/
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  vertical-align: top;
+  align-content: center;
 }
 
 .block {
@@ -69,8 +74,10 @@ div.blockbody label {
 
 .character li {
   border-radius: 25px;
-  border: 2px solid #bc962f;
+  border: 0.2em solid #bc962f;
   margin-bottom: 4px;
+  padding-left: 0.5em;
+  padding-bottom: 0.15em;
 }
 
 .character a {

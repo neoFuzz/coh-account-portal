@@ -10,7 +10,11 @@ class Character {
         this.attributes = {};
 
         if (name) {
-            this.loadCharacter(name);
+            try {
+                this.loadCharacter(name);
+            } catch (error) {
+                global.appLogger.error('Character(): ', error);
+            }   
         }
     }
 
@@ -18,7 +22,8 @@ class Character {
         const exists = await this.checkCharacterInDB(name);
 
         if (exists) {
-            const cmd = `${process.env.DBQUERY} -getcharacter ${this.escapeShellArg(name)}`;
+            const cmd = `${process.env.DBQUERY} -getcharacter "${this.escapeShellArg(name)}"`;
+            global.appLogger.info("Running loadcharacter...")
             this.results = this.execCommand(cmd).split('\n');
             this.parseResults();
             this.blacklistEntries();
@@ -33,16 +38,16 @@ class Character {
 
     execCommand(cmd, timeout = 5000) {
         try {
-            return execSync(cmd, { timeout, stdio: ['pipe', 'pipe', 'ignore'] }).toString();
+            return execSync(cmd, { timeout, stdio: ['pipe', 'pipe', 'pipe'] }).toString();
         } catch (error) {
             throw new Error(`Command failed: ${cmd}\n${error.message}`);
         }
     }
 
     async checkCharacterInDB(name) {
-        const SqlServer = require('../App/Util/SqlServer.js');
+        const SqlServer = require('../Util/SqlServer.js');
         const db = new SqlServer(process.env.DB_CONNECTION);
-        const sqlStr = `SELECT ContainerId FROM cohdb.dbo.ents WHERE Name = ${name}`;
+        const sqlStr = `SELECT ContainerId FROM cohdb.dbo.ents WHERE Name = '${name}'`;
 
         let data = false;
         try {
@@ -51,7 +56,7 @@ class Character {
                 data = true;
             }
         } catch (error) {
-            console.error('Error:', error);
+            global.appLogger.error('Error:', error);
         }
         return data;
     }

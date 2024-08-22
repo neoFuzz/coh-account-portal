@@ -53,15 +53,16 @@ class StaticController {
         }
 
         try {
-            const account = new GameAccount(`${req.session.account.username}`);
-            //account.username = req.session.account.username;
+            const account = new GameAccount();
             await account.fetchAccountByUsername(req.session.account.username);
-            res.render('core/page-manage', {
+            const playerObject = {
                 username: account.username,
-                characters: account.getCharacterList(),
-                lockedCharacters: account.getLockedCharacters(),
-                federation: global.federation // Ensure this is set somewhere in your app
-            });
+                characters: await account.getCharacterList(),
+                lockedCharacters: await account.getLockedCharacters(),
+                federation: global.federation,
+                maplist: Maps.ID
+            }
+            res.render('core/page-manage', playerObject);
             global.appLogger.info(`StaticController.manage(): ${account.username} logged in`);
         } catch (err) {
             // Handle error

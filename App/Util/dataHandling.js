@@ -34,18 +34,34 @@ class DataHandling {
         return (b << 16) | a;
     }
 
+    /**
+    * Generates a hashed password using SHA-512 and Adler-32 checksum.
+    * @param {string} authname - The authentication name.
+    * @param {string} password - The password to hash.
+    * @returns {Buffer} - The SHA-512 hash.
+    */
     static hashPassword(authname, password) {
         authname = authname.toLowerCase();
         const a32 = DataHandling.adler32(authname);
         const a32hex = a32.toString(16).padStart(8, '0');
         const reversedA32hex = a32hex.slice(6) + a32hex.slice(4, 6) + a32hex.slice(2, 4) + a32hex.slice(0, 2);
         const hash = crypto.createHash('sha512');
-        hash.update(password + reversedA32hex);
+        hash.update(`${password}${reversedA32hex}`);
+        return hash.digest();
+    }
+
+    static binHashPassword(authname, password) {
+        authname = authname.toLowerCase();
+        const a32 = DataHandling.adler32(authname);
+        const a32hex = a32.toString(16).padStart(8, '0');
+        const reversedA32hex = a32hex.slice(6, 2) + a32hex.slice(4, 2) + a32hex.slice(2, 2) + a32hex.slice(0, 2);
+        const hash = crypto.createHash('sha512');
+        hash.update(`${password}${reversedA32hex}`);
         return hash.digest();
     }
 
     static binPassword(authname, password) {
-        return DataHandling.hashPassword(authname, password).toString('hex');
+        return `${DataHandling.hashPassword(authname, password).toString('hex')}`;
     }
 
     static encrypt(text, key, iv) {

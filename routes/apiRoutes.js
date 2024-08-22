@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const APIController = require('../App/Controllers/apiController');
-//const SunriseController = require('../App/Controllers/sunriseController');
 
 router.options('/*', (req, res) => res.sendStatus(200));
 
@@ -12,10 +11,8 @@ router.use((req, res, next) => {
   next();
 });
 
-router.post('/character/delete', APIController.deleteCharacter);
-router.get('/character/:type', APIController.getCharacter);
-//router.get('/sunrise/manifest.xml', SunriseController.manifest);
-//router.get('/sunrise/uptime.xml', SunriseController.uptime);
+router.post('/api/character/delete', APIController.deleteCharacter);
+router.get('/api/character/raw', APIController.getCharacter);
 
 router.get('/api/character', APIController.getCharacter);
 router.post('/api/delete-character', APIController.deleteCharacter);

@@ -37,9 +37,7 @@ class Message {
     }
 
     _findFederationServerByName(name) {
-        // Replace this with actual implementation to find a federation server
-        // For example, you might need to load this from a configuration or environment
-        const federationServers = global.federation; // or require a config file
+        const federationServers = global.federation;
         return federationServers.find(item => item.Name.toLowerCase().includes(name.toLowerCase()));
     }
 

@@ -15,10 +15,12 @@ class GameAccount {
         this.lastLogin = null;
         this.lastLogout = null;
 
-        if (typeof username === 'number') {
-            this.fetchAccountByUid(username);
-        } else if (typeof username === 'string' && username.trim() !== '') {
-            this.fetchAccountByUsername(username);
+        if (username !== null || username !== undefined) {
+            if (typeof username === 'number') {
+                this.fetchAccountByUid(username);
+            } else if (typeof username === 'string' && username.trim() !== '') {
+                this.fetchAccountByUsername(username);
+            }
         }
     }
 
@@ -36,8 +38,9 @@ class GameAccount {
     }
 
     async fetchAccountByUid(uid) {
+        let rows;
         try {
-            const rows = await this.executeQuery(
+            rows = await this.executeQuery(
                 `SELECT a.account, a.uid, a.last_login, a.last_logout, a.last_ip
                 FROM cohauth.dbo.user_account a 
                 INNER JOIN cohauth.dbo.user_auth b ON a.account = b.account WHERE a.uid = ?`,
@@ -57,8 +60,9 @@ class GameAccount {
     }
 
     async fetchAccountByUsername(username) {
+        let rows;
         try {
-            const rows = await this.executeQuery(
+            rows = await this.executeQuery(
                 `SELECT a.account, a.uid, a.last_login, a.last_logout, a.last_ip
                  FROM cohauth.dbo.user_account a INNER JOIN cohauth.dbo.user_auth b ON a.account = b.account 
                  WHERE UPPER(b.account) = UPPER(?)`,
@@ -104,7 +108,7 @@ class GameAccount {
                 uid = 10;
             }
 
-            const hash = DataHandling.binPassword(username, password);
+            const hash = DataHandling.hashPassword(username, password);
 
             // Convert hexadecimal string to a binary buffer (ensure length matches binary(16))
             const binaryData = Buffer.from(process.env.user_data.substring(2), 'hex');
@@ -147,7 +151,10 @@ class GameAccount {
             const hash = DataHandling.binPassword(username, password);
 
             const rows = await this.executeQuery(
-                'SELECT a.account, a.uid, a.last_login, a.last_logout, a.last_ip FROM cohauth.dbo.user_account a INNER JOIN cohauth.dbo.user_auth b ON a.account = b.account WHERE UPPER(b.account) = UPPER(?) AND CONVERT(VARCHAR, b.password) = SUBSTRING(?, 1, 30)',
+                `SELECT a.account, a.uid, a.last_login, a.last_logout, a.last_ip
+                FROM cohauth.dbo.user_account a
+                INNER JOIN cohauth.dbo.user_auth b ON a.account = b.account
+                WHERE UPPER(b.account) = UPPER(?) AND CONVERT(VARCHAR, b.password) = SUBSTRING(?, 1, 30)`,
                 [username, hash]
             );
             if (rows.length > 0) {
@@ -158,7 +165,7 @@ class GameAccount {
                 this.lastLogin = row.last_login;
                 this.lastLogout = row.last_logout;
             } else {
-                global.appLogger.info(`Failed login for account ${username}`);
+                global.appLogger.warn(`Failed login for account ${username}`);
                 throw new Error('That username and password does not match our records.');
             }
         } catch (error) {
@@ -169,9 +176,9 @@ class GameAccount {
     async changePassword(newPassword) {
         try {
             DataHandling.validatePassword(newPassword);
-            const hash = DataHandling.binPassword(this.username, newPassword);
+            const hash = `${DataHandling.binPassword(this.username, newPassword)}`;
             await this.executeQuery(
-                'UPDATE dbo.user_auth SET password = CONVERT(BINARY(128),?) WHERE UPPER(account) = UPPER(?)',
+                'UPDATE cohauth.dbo.user_auth SET password = CONVERT(BINARY(128),?) WHERE UPPER(account) = UPPER(?)',
                 [hash, this.username]
             );
         } catch (error) {

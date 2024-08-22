@@ -3,6 +3,11 @@ extends layout
 include ./core/block-server-status.pug
 
 block body_content
-    h1= "Failure!"  
-    p "You need to try again"
-    p= message 
+  #content
+    .block
+        .blocktitle 
+            | Failure!
+        .blockbody
+            p "You need to try again" 
+              a(href="/create") Create an account
+            p= message 

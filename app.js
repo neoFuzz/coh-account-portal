@@ -11,7 +11,6 @@ const RedisStore = require('connect-redis').default;
 const SQLiteStore = require('connect-sqlite3')(session);
 let favicon = require('serve-favicon');
 let cookieParser = require('cookie-parser');
-let bodyParser = require('body-parser');
 let requireDir = require('require-dir');
 let routes = requireDir('./routes');
 
@@ -88,15 +87,10 @@ app.use(session({
 
 // uncomment after placing your favicon in /public
 app.use(favicon(__dirname + '/public/favicon.ico'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-
-// TODO: check this is needed!
-// Use express.json() to parse JSON bodies 
-//app.use(express.json());
-//app.use(express.urlencoded({ extended: true }));
 
 // Map routes dynamically. Saves adding each new page in.
 appLogger.info('Mapping routes...');
@@ -109,6 +103,9 @@ for (let i in routes) {
 // set up server federation
 appLogger.info("Initiating server federation...");
 global.federation = require('./federation-config.js');
+for(let server in global.federation){
+    appLogger.info("Added Federation Server: " + global.federation[server].Name);
+}
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

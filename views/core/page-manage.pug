@@ -22,9 +22,7 @@ block body_content
             .blockbody
                 | Your characters are listed here
                 h2 Characters
-                ul
-                    each character in characters
-                        include block-character-list
+                include block-character-list
         //- if lockedcharacters.length > 0 //- tab out after testing
         .block
             .blocktitle
@@ -51,7 +49,7 @@ block body_content
                     br
                     label(for="character") Character
                     select(name="character")
-                    each Character in characters
-                        option(value=Character.datauri) #{Character.Name}
+                        each Character in characters
+                            option(value=Character.datauri) #{Character.Name}
                     br
                     input(type="submit" name="select" value="Transfer Now")

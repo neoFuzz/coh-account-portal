@@ -72,17 +72,19 @@ class GameAccountController {
         }
 
         try {
-            await req.session.account.changePassword(req.body.password);
+            const ga = new GameAccount();
+            await ga.fetchAccountByUsername(req.session.account.username);
+            await ga.changePassword(req.body.password);
             global.appLogger.info(`gameAccountController.changePassword: Password changed for ${req.session.account.username}`);
             res.render('page-generic-message', {
                 title: 'Success',
-                message: 'Successfully Changed Password'
+                message: `Successfully Changed Password<p>Go back to <a href="/manage">manage</a></p>`
             });
         } catch (error) {
             global.appLogger.error(`gameAccountController.changePassword: Failed to change password: ${error.message}`);
             res.render('page-generic-message', {
                 title: 'Error',
-                message: error.message
+                message: `${error.message}<p>Go back to <a href="/">home</a></p>`
             });
         }
     }
