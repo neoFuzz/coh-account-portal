@@ -13,6 +13,7 @@ let favicon = require('serve-favicon');
 let cookieParser = require('cookie-parser');
 let requireDir = require('require-dir');
 let routes = requireDir('./routes');
+const globalData = require('./App/Middleware/globalData');
 
 let app = express();
 let PORT = process.env.PORT || 3000;
@@ -73,7 +74,7 @@ if (process.env.SESSION_CACHE === "redis") {
 
 if (!ssReady) {
     // If all else fails, use the default in-memory session storage
-    appLogger.info('Using default MemoryStore for Session cache');
+    appLogger.warn('Using default MemoryStore for Session cache');
     sessionStore = new session.MemoryStore();
 }
 
@@ -82,7 +83,10 @@ app.use(session({
     secret: process.env.SESSION_KEY,
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }
+    cookie: {
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        secure: process.env.NODE_ENV === 'production'
+    }
 }));
 
 // uncomment after placing your favicon in /public
@@ -91,6 +95,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(globalData);
 
 // Map routes dynamically. Saves adding each new page in.
 appLogger.info('Mapping routes...');
@@ -103,7 +108,7 @@ for (let i in routes) {
 // set up server federation
 appLogger.info("Initiating server federation...");
 global.federation = require('./federation-config.js');
-for(let server in global.federation){
+for (let server in global.federation) {
     appLogger.info("Added Federation Server: " + global.federation[server].Name);
 }
 

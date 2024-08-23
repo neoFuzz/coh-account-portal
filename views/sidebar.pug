@@ -1,0 +1,10 @@
+//- Define the mixin outside of any block
+mixin menuMacro(menu, level = 1)
+  ul(class=`menu-level--${level}`)
+    each item in menu
+      - const activeClass = item.active ? 'is-active' : ''
+      - const activeTrailClass = item.active_trail ? 'is-active-trail' : ''
+      li(class=`menu__item ${activeClass} ${activeTrailClass}`)
+        a.menu__link.navitem(href=item.url class=`${activeClass} ${activeTrailClass}`)= item.text
+        if item.submenu
+          +menuMacro(item.submenu, level + 1)

@@ -28,8 +28,13 @@ a:hover {
 }
 
 #content {
-  width: 715px;
-  margin: 0 auto;
+  width: 100%;
+  /*margin: 0 auto;*/
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  vertical-align: top;
+  align-content: center;
 }
 
 .block {

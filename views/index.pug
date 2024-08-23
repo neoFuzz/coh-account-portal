@@ -2,7 +2,7 @@ extends layout
 
 include ./core/block-server-status.pug
 
-//- Define the mixin outside of any block
+//- Define the mixin outside of any block 
 mixin menuMacro(menu, level = 1)
   ul(class=`menu-level--${level}`)
     each item in menu
@@ -18,17 +18,16 @@ block body_content
     table(style="border-spacing: 1em;")
       tr
         td(valign="top")
-          +serverStatus(title, status, accounts, characters)
-          block content2
+          +serverStatus(globalData.title, globalData.status, globalData.accounts, globalData.characters)
           include ./html/index.html
         td(valign="top")
           .nav
-            +menuMacro(menuTree)
+            +menuMacro(globalData.menuTree)
             if username
               div(style="padding: 0.2rem")
-                div Current user: #{username} 
+                div Current user: #{globalData.username} 
                 a(href="/logout") Logout
             else
               br
             include core/block-players-online.pug
-            include sidebar.pug
+            //- include sidebar.pug

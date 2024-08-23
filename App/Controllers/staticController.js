@@ -16,7 +16,7 @@ class StaticController {
             const accounts = await gameStats.countAccounts();
             const characters = await gameStats.countCharacters();
             const status = await gameStats.getServerStatus();
-            const menu = new MenuController().menu;
+            const menu = new MenuController(req.session.account?.username || null).menu;
             const online = await gameStats.getOnline();
             online.MapList = Maps.ID;
 
@@ -26,7 +26,6 @@ class StaticController {
                 menuTree: menu,
                 portlLfgOnly: process.env.PORTAL_LFG_ONLY,
                 online: online, // online.List.length and online.Count
-                content2: 'Additional content goes here.', // Content to be rendered in the `content2` block
                 maplist: online.MapList,
                 accounts: accounts,
                 characters: characters,

@@ -3,8 +3,9 @@ const MenuItem = require('../Model/MenuItem.js');
 const Maps = require('../Model/maps.js'); // Ensure this file exists with the required structure
 
 class MenuController {
-    constructor() {
+    constructor(username) {
         this.menu = [];
+        this.account = username;
 
         this.menu.push(new MenuItem('Home', process.env.PORTAL_URL));
 
@@ -25,13 +26,14 @@ class MenuController {
     }
 
     isAccountSet() {
-        // Implement your session check logic here
-        return !!this.account; // Replace with actual session handling
+        return !!this.account;
     }
 
-    isAdmin() {
-        // Implement your admin check logic here
-        return this?.account?.isAdmin; // Replace with actual admin check
+    async isAdmin() {
+        // Setup the AdminController and use a dummy request
+        const AdminController = require('./adminController');
+        const req = {session: {account: {username: this.account}}};
+        return await AdminController.verifyLogin(req);
     }
 
     getMenu(callback) {

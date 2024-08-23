@@ -1,0 +1,122 @@
+extends ../layout
+
+include ../sidebar.pug
+
+//- Additional headers block
+block additional_headers
+  link(rel='stylesheet', type='text/css', href=globalData.portal_url+`vendor/jquery/jquery-ui.min.css`)
+  link(rel='stylesheet', type='text/css', href=globalData.portal_url+`vendor/datatables/datatables.min.css`)
+  link(rel='sytlesheet', type='text/css', href=globalData.portal_url+'stylesheets/'+globalData.portal_style+'/admin.css')
+  script(type='text/javascript', src=globalData.portal_url+`vendor/jquery/jquery-3.4.1.min.js`)
+  script(type='text/javascript', src=globalData.portal_url+`vendor/jquery/jquery-ui.min.js`)
+  script(type='text/javascript', src=globalData.portal_url+`vendor/datatables/datatables.min.js`)
+  script(type='text/javascript', src=globalData.portal_url+`vendor/moment/moment.js`)
+  script(type='text/javascript', src=globalData.portal_url+`vendor/datatables/datetime-moment.js`)
+  title Manage Account: #{username}
+
+//- Content block
+block body_content
+    table
+        thead 
+        tr 
+            td(style="vertical-align: top;")
+                #content
+                    .block
+                        .blocktitle Manage #{username}
+                        .blockbody
+                            table
+                                tr
+                                    td
+                                        label(for="password") Reset Password
+                                        form(method="post", action=`${portal_url}admin/${uid}/password`)
+                                            input(type="password", name="password")
+                                            input(type="submit", value="Change Password")
+
+                    .block
+                        .blocktitle Ban Account
+                        .blockbody
+                            table
+                                tr
+                                    td
+                                        label(for="date") Ban Expiry
+                                        form(method="post", action=`${portal_url}admin/${uid}/ban`)
+                                            input(type="text", name="date", id="bandate")
+                                            input(type="submit", value="Ban Account")
+                            if online
+                                | This person is currently online. Please open the console using your GM character and copy/paste the following command to kick them from the server:
+                                pre
+                                    | svrkick "#{onlinecharacter}" You are being banned.
+
+                    .block
+                        .blocktitle Characters
+                        .blockbody
+                            table#character-list.display.table
+                                thead
+                                    tr
+                                        th Id
+                                        th Name
+                                        th Location
+                                        th Level
+                                        th Exp
+                                        th Inf
+                                        th Last Played
+                                        th Access Level
+                                        th
+                                tfoot
+                                    tr
+                                        th Id
+                                        th Name
+                                        th Location
+                                        th Level
+                                        th Exp
+                                        th Inf
+                                        th Last Played
+                                        th Access Level
+                                        th
+
+    script(type="text/javascript").
+        let maplist = [];
+        // Iterate over maplist keys to populate the maplist array
+        // {globalData.maplist | keys | map(key => `maplist[{key}] = '{globalData.maplist[key]}';`).join('\n')}
+        var maplistData = #{JSON.stringify(global.maplist)};
+        for (var key in maplistData) {
+            if (maplistData.hasOwnProperty(key)) {
+            maplist[key] = maplistData[key];
+            }
+        }
+
+        $(function() {
+        $("#bandate").datepicker();
+        });
+
+        $.fn.dataTable.moment('MM/DD/YYYY');
+
+        $(document).ready(function() {
+        let dt = $('#character-list').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: `#{portal_url}admin/list/character/#{uid}`,
+            order: [[1, 'asc']],
+            columnDefs: [
+            {
+                targets: [2],
+                render: function(data, type, row, meta) {
+                return maplist[data];
+                }
+            },
+            {
+                targets: [4, 5],
+                render: function(data, type, row, meta) {
+                if (data == null) { return '0'; }
+                return data.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
+                }
+            },
+            {
+                targets: 7,
+                render: function(data, type, row, meta) {
+                return data == null ? '0' : data;
+                }
+            }
+            ]
+        });
+        });
