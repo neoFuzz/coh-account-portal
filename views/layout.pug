@@ -9,7 +9,18 @@ html
     link(rel='stylesheet', href='/stylesheets/'+globalData.portal_style+'/style.css')
     block additional_headers
   body
+    include sidebar.pug
     #logo
       img(src="/images/ouroborosLogo.png" width="409")
-    block body_content
-    
+    #content
+      table(style="border-spacing: 1em;")
+        tr
+          td(valign="top")
+            block body_content
+          td(valign="top")
+            .nav
+              +menuMacro(globalData.menuTree)
+              if globalData.username
+                div(style="padding: 0.2rem")
+                  div Current user: #{globalData.username} 
+              include core/block-players-online.pug

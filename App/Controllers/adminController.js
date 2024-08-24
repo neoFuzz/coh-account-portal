@@ -78,17 +78,31 @@ class AdminController {
         });
     }
 
+    /**
+     * Handles the request to view an account as an administrator.
+     * 
+     * This method is an Express route handler that performs the following tasks:
+     * 1. Verifies the login status of the user by calling `AdminController.verifyLogin`.
+     * 2. Fetches account details by `uid` from the `GameAccount` model.
+     * 3. Renders a Pug template with the fetched account data.
+     * 
+     * @param {Object} req - The Express request object, which includes `params.uid` for the user ID.
+     * @param {Object} res - The Express response object, used to render the view or send an error response.
+     * @returns {Promise<void>} A promise that resolves when the operation is complete.
+     * @throws {Error} Throws an error if the login verification fails or if fetching the account details encounters an issue.
+     */
     static async adminAccount(req, res) {
         try {
             await AdminController.verifyLogin(req);
 
-            const uid = req.session.account.uid;
+            // catch a weird bug with static content using this: !== 'favicon.ico' ? req.params.uid : null
+            const uid = req.params.uid;
             const account = new GameAccount()
             await account.fetchAccountByUid(uid);
 
             // Render the Pug template with account data
             res.render('core/page-admin-account', {
-                username: account.username, // Assuming GetUsername is async
+                username: account.username,
                 uid: account.uid
             });
         } catch (error) {
@@ -116,14 +130,19 @@ class AdminController {
             WHERE AuthId = ?
         `;
 
-        sql.query(dbConfig, query, [uid], (err, rows) => {
+        // Create an instance of DataTable with the base query
+        const dataTable = new DataTable(query, [uid]);
+
+        // Use DataTable to handle the request and get the response
+        dataTable.getJSON(req, (err, result) => {
             if (err) {
-                console.error(err);
+                console.error('DataTable error:', err);
                 res.status(500).send('An error occurred');
                 return;
             }
-            res.json(rows);
+            res.json(result);
         });
+
     }
 
     static async verifyLogin(req) {

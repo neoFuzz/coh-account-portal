@@ -1,10 +1,46 @@
-doctype html
-html
-    head
-        title Reports
-    body
-        h1 Reports
-        ul
-            each report in reports
-                li
-                    a(href=`/reports/${report.name}`)= report.name
+extends ../layout.pug
+
+
+
+
+block additional_headers
+  link(rel='stylesheet', type='text/css', href=`${globalData.portal_url}vendor/jquery/jquery-ui.min.css`)
+  link(rel='stylesheet', type='text/css', href=`${globalData.portal_url}vendor/datatables/datatables.min.css`)
+  link(rel='stylesheet', type='text/css', href=`${globalData.portal_url}stylesheets/${globalData.portal_style}/admin.css`)
+  script(type='text/javascript', src=`${globalData.portal_url}vendor/jquery/jquery-3.4.1.min.js`)
+  script(type='text/javascript', src=`${globalData.portal_url}vendor/jquery/jquery-ui.min.js`)
+  script(type='text/javascript', src=`${globalData.portal_url}vendor/datatables/datatables.min.js`)
+  script(type='text/javascript', src=`${globalData.portal_url}vendor/moment/moment.js`)
+  script(type='text/javascript', src=`${globalData.portal_url}vendor/datatables/datetime-moment.js`)
+  title Reports
+
+block body_content
+  .block
+    .blocktitle Reports
+    .blockbody
+      table#reports-list.display.table
+        thead
+          tr
+            th Name
+            th Description
+            th
+        tbody
+          each report, index in Object.keys(reports)
+            tr
+              td= report
+              td= reports[report].description
+              td
+                a(href=`${globalData.portal_url}admin/reports/${report}`)
+                  button Open
+        tfoot
+          tr
+            th Name
+            th Description
+            th
+
+  script(type='text/javascript', nonce=cspNonce).
+    $(document).ready(function() {
+      var dt = $('#reports-list').DataTable({
+        order: [[0, 'asc']],
+      });
+    });

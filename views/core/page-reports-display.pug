@@ -1,29 +1,71 @@
-doctype html
-html
-    head
-        title= title
-    body
-        h1= title
-        // Display the results here
-        table
-            thead
-                tr
-                    each header, index in Object.keys(results[0] || {})
-                        th= header
-            tbody
-                each row in results
-                    tr
-                        each value in row
-                            td= value
-        // Display accounts and characters if applicable
-        if accounts.length > 0
-            select(name='account')
-                option(value='') Select Account
-                each account in accounts
-                    option(value=account.uid)= account.account_name
+extends ../layout.pug
 
+//- Pug Template
+
+block additional_headers
+  link(rel='stylesheet', type='text/css', href=`${globalData.portal_url}vendor/jquery/jquery-ui.min.css`)
+  link(rel='stylesheet', type='text/css', href=`${globalData.portal_url}vendor/datatables/datatables.min.css`)
+  link(rel='stylesheet', type='text/css', href=`${globalData.portal_url}vendor/chosen/chosen.min.css`)
+  link(rel='stylesheet', type='text/css', href=`${globalData.portal_url}styles/${globalData.portal_style}/admin.css`)
+  script(type='text/javascript', src=`${globalData.portal_url}vendor/jquery/jquery-3.4.1.min.js`)
+  script(type='text/javascript', src=`${globalData.portal_url}vendor/jquery/jquery-ui.min.js`)
+  script(type='text/javascript', src=`${globalData.portal_url}vendor/datatables/datatables.min.js`)
+  script(type='text/javascript', src=`${globalData.portal_url}vendor/moment/moment.js`)
+  script(type='text/javascript', src=`${globalData.portal_url}vendor/datatables/datetime-moment.js`)
+  script(type='text/javascript', src=`${globalData.portal_url}vendor/chosen/chosen.jquery.min.js`)
+  title= "Report ${title}"
+
+block body_content
+  .block
+    .blocktitle Report #{title}
+    .blockbody
+      form#options(method='get')
+        if accounts.length > 0
+          label(for='account') Account
+          select#account(name='account', data-placeholder='Choose an account', class='chosen-select')
+            option(value='null')
+            each row in accounts
+              if row[0] == account
+                option(value=row[0], selected)= row[1]
+              else
+                option(value=row[0])= row[1]
         if characters.length > 0
-            select(name='character')
-                option(value='') Select Character
-                each character in characters
-                    option(value=character.ContainerId)= character.Name
+          label(for='character') Character
+          select#character(name='character', data-placeholder='Choose a character', class='chosen-select')
+            option(value='null')
+            each row in characters
+              if row[0] == character
+                option(value=row[0], selected)= row[1]
+              else
+                option(value=row[0])= row[1]
+      hr
+      table#reports-list.display.table
+        thead
+          tr
+            each col in Object.keys(results[0])
+              th #{col}
+        tbody
+          each row in results
+            tr
+              each col in row
+                td!= col
+        tfoot
+          tr
+            each col in Object.keys(results[0])
+              th #{col}
+      if results.length == 0
+        p No data found.
+
+  script(type='text/javascript', nonce=cspNonce).
+    $(".chosen-select").chosen({disable_search_threshold: 10, width: "220px"});
+    $("#account").chosen().change(function() {
+      $("#character").val('null');
+      $('#options').submit();
+    });
+    $("#character").chosen().change(function() {
+      $('#options').submit();
+    });
+
+    $(document).ready(function() {
+      var dt = $('#reports-list').DataTable({});
+    });

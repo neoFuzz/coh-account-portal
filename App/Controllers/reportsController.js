@@ -1,7 +1,6 @@
 const path = require('path');
 const fs = require('fs');
-const SqlServer = require('../Util/SqlServer');
-const { getReportsConfig } = require('../Reports/reportsConfig');
+const sql = require('msnodesqlv8');
 
 class ReportsController {
     constructor(container) {
@@ -9,82 +8,113 @@ class ReportsController {
     }
 
     async listReports(req, res) {
-        this.verifyLogin(req, res);
+        if (!this.verifyLogin(req)) {
+            res.redirect('/login');
+        }
 
-        const reportsConfig = getReportsConfig();
+        try {
+            // Include the reports.default.js file
+            let reports = require('../../config/reports.default.js');
 
-        res.render('core/page-reports', { reports: reportsConfig });
+            // Include user-specific reports if available
+            const userFile = path.join(__dirname, 'config/reports.user.js');
+            if (fs.existsSync(userFile)) {
+                Object.assign(reports, require(userFile));
+            }
+
+            res.render('core/page-reports', { reports });
+        } catch (error) {
+            console.error('Error listing reports:', error);
+            res.status(500).send('Internal Server Error');
+        }
     }
 
     async report(req, res) {
-        this.verifyLogin(req, res);
+        if (!this.verifyLogin(req)) {
+            res.redirect('/login');
+        }
 
-        const reportsConfig = getReportsConfig();
-        const sql = SqlServer.getInstance();
-        const reportName = req.params.name;
-        const query = reportsConfig[reportName]?.sql || '';
-        let params = [];
-        let accounts = [];
-        let characters = [];
-        let results = [];
+        try {
+            const reportName = req.params.name;
+            let query = '';
+            let params = [];
+            let results = [];
+            let accounts = [];
+            let characters = [];
 
-        if (query.includes('@ACCOUNT_NAME') || query.includes('@ACCOUNT_UID') || query.includes('@CHARACTER_NAME') || query.includes('@CHARACTER_CID')) {
-            if (req.query.account && req.query.account !== 'null') {
-                accounts = await this.fetchAccounts(sql);
+            // Include the reports.default.js file
+            let reports = require('../../config/reports.default.js');
 
-                if (query.includes('@ACCOUNT_NAME')) {
-                    const account = accounts.find(acc => acc.uid == req.query.account);
-                    if (account) {
-                        query = `DECLARE @ACCOUNT_NAME VARCHAR(MAXLEN) = ?;${query}`;
-                        params.push(account.account_name);
+            // Include user-specific reports if available
+            const userFile = path.join(__dirname, 'config/reports.user.js');
+            if (fs.existsSync(userFile)) {
+                Object.assign(reports, require(userFile));
+            }
+
+            // Retrieve the SQL query for the report
+            query = reports[reportName]?.sql || '';
+
+            // Check for account and character parameters
+            const accountId = req.query.account || '';
+            const characterId = req.query.character || '';
+
+            if (query.includes('@ACCOUNT_NAME') || query.includes('@ACCOUNT_UID')) {
+                if (accountId) {
+                    if (query.includes('@ACCOUNT_NAME')) {
+                        const accountsResult = await this.queryDatabase('SELECT uid, account FROM user_account ORDER BY account');
+                        accounts = accountsResult;
+
+                        params.push(accounts.find(acc => acc.uid === accountId)?.account || '');
                     }
-                }
 
-                if (query.includes('@ACCOUNT_UID')) {
-                    query = `DECLARE @ACCOUNT_UID INT = ?;${query}`;
-                    params.push(req.query.account);
+                    if (query.includes('@ACCOUNT_UID')) {
+                        params.push(accountId);
+                    }
                 }
             }
 
             if (query.includes('@CHARACTER_NAME') || query.includes('@CHARACTER_CID')) {
-                if (req.query.account && req.query.account !== 'null') {
-                    characters = await this.fetchCharacters(sql, req.query.account);
+                if (accountId) {
+                    if (query.includes('@CHARACTER_NAME')) {
+                        const charactersResult = await this.queryDatabase('SELECT ContainerId, Name FROM Ents WHERE AuthId = ? ORDER BY Name', [accountId]);
+                        characters = charactersResult;
 
-                    if (req.query.character && req.query.character !== 'null') {
-                        if (query.includes('@CHARACTER_NAME')) {
-                            const character = characters.find(char => char.ContainerId == req.query.character);
-                            if (character) {
-                                query = `DECLARE @ACCOUNT_NAME VARCHAR(MAXLEN) = ?;${query}`;
-                                params.push(character.Name);
-                            }
-                        }
+                        params.push(characters.find(char => char.ContainerId === characterId)?.Name || '');
+                    }
 
-                        if (query.includes('@CHARACTER_CID')) {
-                            query = `DECLARE @CHARACTER_CID INT = ?;${query}`;
-                            params.push(req.query.character);
-                        }
+                    if (query.includes('@CHARACTER_CID')) {
+                        params.push(characterId);
                     }
                 }
             }
-        }
 
-        if (!params.length) {
-            results = await this.fetchResults(sql, query, params);
-        }
+            if (!params.length) {
+                results = await this.queryDatabase(query, params);
+                if (reports[reportName]?.transpose) {
+                    results = transpose(results);
+                }
+            }
 
-        res.render('core/page-reports-display', {
-            reports: reportsConfig,
-            results: results,
-            title: reportName,
-            accounts: accounts,
-            characters: characters,
-            account: req.query.account || '',
-            character: req.query.character || ''
-        });
+            res.render('core/page-reports-display', {
+                reports,
+                results,
+                title: reportName,
+                accounts,
+                characters,
+                account: accountId,
+                character: characterId
+            });
+        } catch (error) {
+            console.error('Error fetching report:', error);
+            res.status(500).send('Internal Server Error');
+        }
     }
 
-    verifyLogin(req, res) {
-        // Implement your login verification logic here
+    async verifyLogin(req) {
+        // Setup the AdminController and use a dummy request
+        const AdminController = require('./adminController.js');
+
+        return await AdminController.verifyLogin(req);
     }
 
     async fetchAccounts(sql) {
@@ -118,6 +148,7 @@ class ReportsController {
         });
     }
 
+    /** Helper function to transpose results */
     transpose(assocArray) {
         if (assocArray.length === 0) return [];
 
@@ -138,6 +169,18 @@ class ReportsController {
 
         return transposed;
     }
+
+    // Helper function to query the database
+    async queryDatabase(query, params = []) {
+        return new Promise((resolve, reject) => {
+            sql.query(process.env.DB_CONNECTION, query, params, (err, results) => {
+                if (err) return reject(err);
+                resolve(results);
+            });
+        });
+    }
+
+
 }
 
 module.exports = ReportsController;

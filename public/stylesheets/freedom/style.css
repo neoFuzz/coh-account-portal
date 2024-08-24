@@ -37,7 +37,7 @@ a:hover {
 .block {
   margin-top: 11px;
   border: solid 1px #0E2640;
-  width: 540px;
+  min-width: 540px;
 }
 
 .littleblock {

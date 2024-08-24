@@ -1,0 +1,36 @@
+[
+    {
+        "Name": "Aurora Server",
+        "Url": "http://10.5.0.91/City-of-Heroes-Account-Portal/public/",
+        "Policy": {
+            "AllowOutgoing": false,
+            "AllowIncoming": false,
+            "ForceInfluence": -1,
+            "ForceAccessLevel": 0,
+            "AllowInventory": true,
+            "ForceDefaultMap": true,
+            "DeleteOnTransfer": false
+        },
+        "Crypto": {
+            "key": "SomeKey",
+            "iv": "SomeIV"
+        }
+    },
+    {
+        "Name": "City Of Heroes: Rebirth",
+        "Url": "https://play.cityofheroesrebirth.com/",
+        "Policy": {
+            "AllowOutgoing": true,
+            "AllowIncoming": true,
+            "ForceInfluence": -1,
+            "ForceAccessLevel": 0,
+            "AllowInventory": true,
+            "ForceDefaultMap": true,
+            "DeleteOnTransfer": false
+        },
+        "Crypto": {
+            "key": "AnotherKey",
+            "iv": "AnotherIV"
+        }
+    }
+]

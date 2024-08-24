@@ -9,10 +9,13 @@ const MonoLogger = require('./App/Util/MonoLogger');
 const Redis = require('redis');
 const RedisStore = require('connect-redis').default;
 const SQLiteStore = require('connect-sqlite3')(session);
+const helmet = require('helmet');
+const csurf = require('@dr.pogodin/csurf');
 let favicon = require('serve-favicon');
 let cookieParser = require('cookie-parser');
 let requireDir = require('require-dir');
 let routes = requireDir('./routes');
+const crypto = require('crypto');
 const globalData = require('./App/Middleware/globalData');
 
 let app = express();
@@ -46,7 +49,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
 // Configure session middleware
-appLogger.info('Configuring session middleware');
+appLogger.info('Configuring session middleware...');
 let sessionStore;
 let ssReady = false;
 
@@ -59,12 +62,12 @@ if (process.env.SESSION_CACHE === "redis") {
     try {
         redisClient.connect().catch(logger.error);
         sessionStore = new RedisStore({ client: redisClient, prefix: 'cohap:' });
+        ssReady = true;
     } catch (error) {
         appLogger.error('Failed to connect to Redis:', error);
         appLogger.info('Using default MemoryStore for Session cache instead');
         sessionStore = new session.MemoryStore();
     }
-    ssReady = true;
 } else if (process.env.SESSION_CACHE === "SQLite") {
     // Start setting up SQLite3 for session storage
     appLogger.info('Using ' + process.env.SESSION_CACHE + ' for Session cache');
@@ -89,29 +92,71 @@ app.use(session({
     }
 }));
 
-// uncomment after placing your favicon in /public
-app.use(favicon(__dirname + '/public/favicon.ico'));
+app.use(csurf());
+
+app.use(function (req, res, next) {
+    res.cookie("mytoken", req.csrfToken());
+    next();
+});
+
+// Set up more Middleware
+let csrfProtection = csurf({ cookie: true });
+app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(globalData);
+app.use(csrfProtection);
 
-// Map routes dynamically. Saves adding each new page in.
+// Middleware to generate nonce and add to response locals
+app.use((req, res, next) => {
+    res.locals.cspNonce = crypto.randomBytes(16).toString('base64');
+    next();
+  });
+  
+  // Middleware to set CSP header
+  app.use((req, res, next) => {
+    const nonce = res.locals.cspNonce;
+    res.setHeader("Content-Security-Policy", `script-src 'self' 'nonce-${nonce}'`);
+    next();
+  });
+
+// ******** Map routes ********
 appLogger.info('Mapping routes...');
 
+// We map the routes dynamically. This saves adding each new page and having an unweildly list.
 for (let i in routes) {
-    appLogger.info('Mapping route ' + i);
+    appLogger.info('Mapping routes from ' + i);
     app.use('/', routes[i]);
 }
 
-// set up server federation
+// ******** set up server federation ********
+const fs = require('fs');
 appLogger.info("Initiating server federation...");
-global.federation = require('./federation-config.js');
-for (let server in global.federation) {
-    appLogger.info("Added Federation Server: " + global.federation[server].Name);
+
+// Load the JSON file
+const filePath = path.join(__dirname, 'federation-config.json');
+const fileContent = fs.readFileSync(filePath, 'utf8');
+
+// Parse the JSON data
+global.federation = [];
+try {
+    global.federation = JSON.parse(fileContent);
+} catch (e) {
+    appLogger.warn('Prolem with importing servers from file: ', e);
+    appLogger.warn('Check the file is a vaild JSON file. Continuing without federation...');
 }
 
+// Iterate over the federation object and log the server names
+for (let server in global.federation) {
+    if (global.federation.hasOwnProperty(server)) {
+        appLogger.info("Added Federation Server: " + global.federation[server].Name);
+    }
+}
+
+// ******** Setup error handlers ********
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
     let err = new Error('Not Found');
@@ -143,6 +188,7 @@ app.use(function (err, req, res, next) {
     });
 });
 
+// ******** Start the web service ********
 app.set('port', PORT);
 global.appLogger.info("Web server is ready on port " + PORT);
 let server = app.listen(app.get('port'), function () {

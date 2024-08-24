@@ -10,6 +10,7 @@
     "name": "fuzz_c"
   },
   "dependencies": {
+    "@dr.pogodin/csurf": "^1.13.0",
     "account-portal": "file:",
     "axios": "^1.7.4",
     "better-sqlite3": "^11.1.2",
@@ -24,6 +25,7 @@
     "express": "^4.14.0",
     "express-session": "^1.18.0",
     "fs": "^0.0.1-security",
+    "helmet": "^7.1.0",
     "jquery": "^3.7.1",
     "moment-js": "^1.1.15",
     "msnodesqlv8": "^4.2.1",

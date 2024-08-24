@@ -6,121 +6,46 @@ include sidebar.pug
 block additional_headers
   link(rel='stylesheet', type='text/css', href=globalData.portal_url+`vendor/jquery/jquery-ui.min.css`)
   link(rel='stylesheet', type='text/css', href=globalData.portal_url+`vendor/datatables/datatables.min.css`)
-  link(rel='sytlesheet', type='text/css', href=globalData.portal_url+'stylesheets/'+globalData.portal_style+'/admin.css')
+  link(rel='stylesheet', type='text/css', href=globalData.portal_url+'stylesheets/'+globalData.portal_style+'/admin.css')
   script(type='text/javascript', src=globalData.portal_url+`vendor/jquery/jquery-3.4.1.min.js`)
   script(type='text/javascript', src=globalData.portal_url+`vendor/jquery/jquery-ui.min.js`)
   script(type='text/javascript', src=globalData.portal_url+`vendor/datatables/datatables.min.js`)
   script(type='text/javascript', src=globalData.portal_url+`vendor/moment/moment.js`)
   script(type='text/javascript', src=globalData.portal_url+`vendor/datatables/datetime-moment.js`)
+  script(type='text/javascript', src='/js/admin-table.js')
 
 //- Content block
 block body_content
-    table
-        thead 
-        tr 
-            td(style="vertical-align: top;")
-                #content
-                    //- style override for .block required
-                    .block(style="width:auto") 
-                        .blocktitle List of Accounts
-                        .blockbody
-                            table#account-list.display.table(style="width:1200")
-                                thead
-                                    tr
-                                        th UID
-                                        th Account Name
-                                        th Banned
-                                        th Ban Expiry
-                                        th Last Login
-                                        th Last IP
-                                        th Inf
-                                        th # Characters
-                                        th Online
-                                        th Online Time (this session)
-                                        th Online Time (total)
-                                        th
-                                tfoot
-                                    tr
-                                        th UID
-                                        th Account Name
-                                        th Banned
-                                        th Ban Expiry
-                                        th Last Login
-                                        th Last IP
-                                        th Inf
-                                        th # Characters
-                                        th Online
-                                        th Online Time (this session)
-                                        th Online Time (total)
-                                        th
-            td(valign="top")
-                .nav
-                  +menuMacro(globalData.menuTree)
-                  if globalData.username
-                    div(style="padding: 0.2rem")
-                      div Current user: #{globalData.username}
-                  else
-                    br
-                  include core/block-players-online.pug
-        script(type='text/javascript').
-            $.fn.dataTable.moment('MM/DD/YYYY');
-            let portal_url = '#{globalData.portal_url}';
-
-            $(document).ready(function() {
-                var dt = $('#account-list').DataTable({
-                    processing: true,
-                    serverSide: true,
-                    ajax: {
-                        url: `${portal_url}admin/list/account`, // URL to fetch data from server
-                        dataSrc: function (json) {
-                            // Modify json.data if needed
-                            return json.data;
-                        }
-                    },
-                    order: [[1, 'asc']],
-                    columns: [
-                        { data: 'uid' },
-                        { data: 'account_name' },
-                        { data: 'banned' },
-                        { data: 'ban_expiry' },
-                        { data: 'last_login' },
-                        { data: 'last_ip' },
-                        { data: 'inf' },
-                        { data: 'num_characters' },
-                        { data: 'active' },
-                        { data: 'online_time_this_session' },
-                        { data: 'online_time_total' },
-                        { data: 'button', searchable: false, orderable: false }
-                    ],
-                    columnDefs: [
-                        {
-                            targets: [3, 4, 5, 7],
-                            render: function(data) {
-                                return data == null ? '-' : data;
-                            }
-                        },
-                        {
-                            targets: 6,
-                            render: function(data) {
-                                if (data === null || data === undefined) {
-                                    return '-';
-                                }
-                                return data.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
-                            }
-                        },
-                        {
-                            targets: [9, 10],
-                            width: 75,
-                            render: function(data) {
-                                return data == null ? '-' : moment.duration(data, 'seconds').humanize();
-                            }
-                        },
-                        {
-                            targets: 11,
-                            render: function(data, type, row) {
-                                return `<a href='${portal_url}admin/${row.uid}'><button>Open</button></a>`;
-                            }
-                        }
-                    ]
-                });
-            });
+    //- style override for .block required
+    .block(style="width:auto") 
+        .blocktitle List of Accounts
+        .blockbody
+            table#account-list.display.table(style="width:1200")
+                thead
+                    tr
+                        th UID
+                        th Account Name
+                        th Banned
+                        th Ban Expiry
+                        th Last Login
+                        th Last IP
+                        th Inf
+                        th # Characters
+                        th Online
+                        th Online Time (this session)
+                        th Online Time (total)
+                        th
+                tfoot
+                    tr
+                        th UID
+                        th Account Name
+                        th Banned
+                        th Ban Expiry
+                        th Last Login
+                        th Last IP
+                        th Inf
+                        th # Characters
+                        th Online
+                        th Online Time (this session)
+                        th Online Time (total)
+                        th
