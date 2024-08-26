@@ -14,10 +14,10 @@ class ReportsController {
 
         try {
             // Include the reports.default.js file
-            let reports = require('../../config/reports.default.js');
+            let reports = require('../Reports/reports.default.js');
 
             // Include user-specific reports if available
-            const userFile = path.join(__dirname, 'config/reports.user.js');
+            const userFile = path.join(__dirname, '../../config/reports.user.js');
             if (fs.existsSync(userFile)) {
                 Object.assign(reports, require(userFile));
             }
@@ -33,81 +33,96 @@ class ReportsController {
         if (!this.verifyLogin(req)) {
             res.redirect('/login');
         }
+        // Load the report configuration
+        // Include the reports.default.js file
+        let reports = require('../Reports/reports.default.js');
+
+        // Include user-specific reports if available
+        const userFile = path.join(__dirname, '../../config/reports.user.js');
+        if (fs.existsSync(userFile)) {
+            Object.assign(reports, require(userFile));
+        }
+
+        const character = req.query.character || null;
+        const account = req.query.account || null;
+        const name = req.params.name;
+        let query = reports[name]?.sql || 'SELECT * FROM your_table';
+        const params = [];
+        let needsAccountDefined = false;
+        let needsCharacterDefined = false;
+        let accounts = [];
+        let characters = [];
+        let results = [];
 
         try {
-            const reportName = req.params.name;
-            let query = '';
-            let params = [];
-            let results = [];
-            let accounts = [];
-            let characters = [];
-
-            // Include the reports.default.js file
-            let reports = require('../../config/reports.default.js');
-
-            // Include user-specific reports if available
-            const userFile = path.join(__dirname, 'config/reports.user.js');
-            if (fs.existsSync(userFile)) {
-                Object.assign(reports, require(userFile));
-            }
-
-            // Retrieve the SQL query for the report
-            query = reports[reportName]?.sql || '';
-
-            // Check for account and character parameters
-            const accountId = req.query.account || '';
-            const characterId = req.query.character || '';
-
-            if (query.includes('@ACCOUNT_NAME') || query.includes('@ACCOUNT_UID')) {
-                if (accountId) {
-                    if (query.includes('@ACCOUNT_NAME')) {
-                        const accountsResult = await this.queryDatabase('SELECT uid, account FROM user_account ORDER BY account');
-                        accounts = accountsResult;
-
-                        params.push(accounts.find(acc => acc.uid === accountId)?.account || '');
+            // Check and prepare query for account placeholders
+            if (/@ACCOUNT_NAME|@ACCOUNT_UID|@CHARACTER_NAME|@CHARACTER_CID/.test(query)) {
+                accounts = await this.queryDatabase(
+                    `SELECT user_account.uid as uid, user_account.account as account_name
+                     FROM cohauth.dbo.user_account ORDER BY account`);
+                if (account && account !== 'null') {
+                    if (/@ACCOUNT_NAME/.test(query)) {
+                        const accountName = accounts.find(row => row.uid === account);
+                        if (accountName) {
+                            query = `DECLARE @ACCOUNT_NAME VARCHAR(MAXLEN) = ?;${query}`;
+                            params.push(accountName.account);
+                        }
                     }
-
-                    if (query.includes('@ACCOUNT_UID')) {
-                        params.push(accountId);
+                    if (/@ACCOUNT_UID/.test(query)) {
+                        query = `DECLARE @ACCOUNT_UID INT = ?;${query}`;
+                        params.push(account);
                     }
+                } else {
+                    needsAccountDefined = true;
                 }
             }
 
-            if (query.includes('@CHARACTER_NAME') || query.includes('@CHARACTER_CID')) {
-                if (accountId) {
-                    if (query.includes('@CHARACTER_NAME')) {
-                        const charactersResult = await this.queryDatabase('SELECT ContainerId, Name FROM Ents WHERE AuthId = ? ORDER BY Name', [accountId]);
-                        characters = charactersResult;
-
-                        params.push(characters.find(char => char.ContainerId === characterId)?.Name || '');
+            // Check and prepare query for character placeholders
+            if (/@CHARACTER_NAME|@CHARACTER_CID/.test(query)) {
+                if (account && account !== 'null') {
+                    characters = await this.queryDatabase('SELECT ContainerId, Name FROM cohdb.dbo.Ents WHERE AuthId = ? ORDER BY Name', [account]);
+                    if (character && character !== 'null') {
+                        if (/@CHARACTER_NAME/.test(query)) {
+                            const characterName = characters.find(row => row.ContainerId === character);
+                            if (characterName) {
+                                query = `DECLARE @CHARACTER_NAME VARCHAR(MAXLEN) = ?;${query}`;
+                                params.push(characterName.Name);
+                            }
+                        }
+                        if (/@CHARACTER_CID/.test(query)) {
+                            query = `DECLARE @CHARACTER_CID INT = ?;${query}`;
+                            params.push(character);
+                        }
+                    } else {
+                        needsCharacterDefined = true;
                     }
-
-                    if (query.includes('@CHARACTER_CID')) {
-                        params.push(characterId);
-                    }
+                } else {
+                    needsCharacterDefined = true;
                 }
             }
 
-            if (!params.length) {
+            // Execute the query if no placeholders are missing
+            if (!needsAccountDefined && !needsCharacterDefined) {
                 results = await this.queryDatabase(query, params);
-                if (reports[reportName]?.transpose) {
-                    results = transpose(results);
+                if (reports[name]?.transpose) {
+                    results = this.transpose(results);
                 }
             }
 
+            // Render the Pug template
             res.render('core/page-reports-display', {
                 reports,
                 results,
-                title: reportName,
+                title: name,
                 accounts,
                 characters,
-                account: accountId,
-                character: characterId
+                account: account || '',
+                character: character || ''
             });
-        } catch (error) {
-            console.error('Error fetching report:', error);
-            res.status(500).send('Internal Server Error');
+        } catch (err) {
+            res.status(500).send(err.message);
         }
+
     }
 
     async verifyLogin(req) {
@@ -179,8 +194,6 @@ class ReportsController {
             });
         });
     }
-
-
 }
 
 module.exports = ReportsController;

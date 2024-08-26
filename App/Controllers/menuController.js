@@ -18,6 +18,9 @@ class MenuController {
         if (this.isAccountSet() && this.isAdmin()) {
             this.menu.push(new MenuItem('Admin', `${process.env.PORTAL_URL}admin/`));
             this.menu.push(new MenuItem('Reports', `${process.env.PORTAL_URL}admin/reports`));
+            let reportsList = new MenuItem('Reports List');
+            reportsList.add(new MenuItem('Player Reports', `${process.env.PORTAL_URL}admin/reports/players`));
+            this.menu.push(reportsList);
         }
 
         if (this.isAccountSet()) {

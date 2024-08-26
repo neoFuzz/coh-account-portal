@@ -1,12 +1,10 @@
 extends ../layout.pug
 
-//- Pug Template
-
 block additional_headers
   link(rel='stylesheet', type='text/css', href=`${globalData.portal_url}vendor/jquery/jquery-ui.min.css`)
   link(rel='stylesheet', type='text/css', href=`${globalData.portal_url}vendor/datatables/datatables.min.css`)
   link(rel='stylesheet', type='text/css', href=`${globalData.portal_url}vendor/chosen/chosen.min.css`)
-  link(rel='stylesheet', type='text/css', href=`${globalData.portal_url}styles/${globalData.portal_style}/admin.css`)
+  link(rel='stylesheet', type='text/css', href=`${globalData.portal_url}stylesheets/${globalData.portal_style}/admin.css`)
   script(type='text/javascript', src=`${globalData.portal_url}vendor/jquery/jquery-3.4.1.min.js`)
   script(type='text/javascript', src=`${globalData.portal_url}vendor/jquery/jquery-ui.min.js`)
   script(type='text/javascript', src=`${globalData.portal_url}vendor/datatables/datatables.min.js`)
@@ -25,24 +23,25 @@ block body_content
           select#account(name='account', data-placeholder='Choose an account', class='chosen-select')
             option(value='null')
             each row in accounts
-              if row[0] == account
-                option(value=row[0], selected)= row[1]
+              if row["uid"] == account
+                option(value=row["uid"], selected)= row["account_name"]
               else
-                option(value=row[0])= row[1]
+                option(value=row["uid"])= row["account_name"]
+        br
         if characters.length > 0
           label(for='character') Character
           select#character(name='character', data-placeholder='Choose a character', class='chosen-select')
             option(value='null')
             each row in characters
-              if row[0] == character
-                option(value=row[0], selected)= row[1]
+              if row["ContainerId"] == character
+                option(value=row["ContainerId"], selected)= row["Name"]
               else
-                option(value=row[0])= row[1]
+                option(value=row["ContainerId"])= row["Name"]
       hr
       table#reports-list.display.table
         thead
           tr
-            each col in Object.keys(results[0])
+            each col in Object.keys(results[0] || {})
               th #{col}
         tbody
           each row in results
@@ -51,7 +50,7 @@ block body_content
                 td!= col
         tfoot
           tr
-            each col in Object.keys(results[0])
+            each col in Object.keys(results[0] || {})
               th #{col}
       if results.length == 0
         p No data found.

@@ -1,4 +1,8 @@
-// reportsConfig.js
+// App/Reports/reports.default.js
+
+// How to create custom reports for yourself:
+// Make a file called 'reports.user.js' with entries similar to what's below.
+// Replacement strings: '@ACCOUNT_NAME', '@CHARACTER_NAME', '@ACCOUNT_UID', '@CHARACTER_CID'
 
 const reports = {
     'CharacterSalvage': {
@@ -8,16 +12,15 @@ const reports = {
             FROM cohdb.dbo.InvSalvage0 WHERE ContainerId = @CHARACTER_CID
             UNION
             SELECT 'Stored' AS Type, *,
-                NULL AS S_ExperiementalTech,
-                NULL AS S_UnknownChemicals,
-                NULL AS S_SignatureSalvage,
-                NULL AS S_SignatureSalvageU,
-                NULL AS S_Never_MeltingIce
+            NULL AS S_ExperiementalTech,
+            NULL AS S_UnknownChemicals,
+            NULL AS S_SignatureSalvage,
+            NULL AS S_SignatureSalvageU,
+            NULL AS S_Never_MeltingIce
             FROM cohdb.dbo.InvStoredSalvage0 WHERE ContainerId = @CHARACTER_CID
         `,
-        transpose: true // We definitely want this report rotated.
+        transpose: true
     },
-
     'Merits': {
         description: 'Display end game merits held by accounts.',
         sql: `
@@ -44,7 +47,6 @@ const reports = {
             ORDER BY AuthName, Name
         `
     },
-
     'RichestCharacters': {
         description: 'Top 10 richest characters in the game.',
         sql: `
@@ -59,10 +61,9 @@ const reports = {
                 ents.AccessLevel,
                 null as button
             FROM cohdb.dbo.ents
-            ORDER BY Ents.InfluencePoints Desc
+            ORDER BY Ents.InfluencePoints DESC
         `
     },
-
     'AuditAdmins': {
         description: 'Administrative characters audit.',
         sql: `
@@ -74,8 +75,4 @@ const reports = {
     }
 };
 
-function getReportsConfig() {
-    return reports;
-}
-
-module.exports = { reports, getReportsConfig };
+module.exports = reports;

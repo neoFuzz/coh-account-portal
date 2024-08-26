@@ -50,6 +50,7 @@ app.set('view engine', 'pug');
 
 // Configure session middleware
 appLogger.info('Configuring session middleware...');
+app.use(favicon(__dirname + '/public/favicon.ico'));
 let sessionStore;
 let ssReady = false;
 
@@ -106,7 +107,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(globalData);
 app.use(csrfProtection);
 

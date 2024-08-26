@@ -1,7 +1,7 @@
 extends ../layout
 
 block body_content
-    #content
+    #content(style="width:540px")
         .block
             .blocktitle Welcome #{username}
             .blockbody
@@ -23,33 +23,39 @@ block body_content
                 | Your characters are listed here
                 h2 Characters
                 include block-character-list
-        //- if lockedcharacters.length > 0 //- tab out after testing
-        .block
-            .blocktitle
-                | Locked Characters
-            .blockbody
-                p The following characters are currently locked for a pending modification or server transfer. Such processes typically take less than a minute. If a character remains locked due to a bug or failure, you can unlock them below.
-                ul
-                    each lockedCharacter in lockedCharacters
-                        li
-                            | #{lockedCharacter.name} - #{lockedCharacter.AccSvrLock}
-                            form(method="post", action=portal_url + "federation/clear-transfer" style="display: inline-block;")
-                                input(type="submit" value="Unlock")
-                                input(type="hidden" name="character" value=character.datauri)
+        if lockedCharacters.length > 0
+            .block
+                .blocktitle
+                    | Locked Characters
+                .blockbody
+                    p The following characters are currently locked for a pending modification or server transfer. Such processes typically take less than a minute. If a character remains locked due to a bug or failure, you can unlock them below.
+                    ul
+                        each lockedCharacter in lockedCharacters
+                            li
+                                | #{lockedCharacter.name} - #{lockedCharacter.AccSvrLock}
+                                form(method="post", action=portal_url + "federation/clear-transfer" style="display: inline-block;")
+                                    input(type="submit" value="Unlock")
+                                    input(type="hidden" name="character" value=character.datauri)
         .block
             .blocktitle Character Transfer
             .blockbody
                 form(method="post" action="./federation/transfer-character-request")
                     p Please select a server and character to transfer:
-                    label(for="server") Server
-                    select(name="server")
-                        each Server in federation
-                            if Server.Policy.AllowOutgoing
-                            option(value=Server.Name) #{Server.Name}
-                    br
-                    label(for="character") Character
-                    select(name="character")
-                        each Character in characters
-                            option(value=Character.datauri) #{Character.Name}
-                    br
+                    table
+                        thead
+                        tr
+                            td
+                                label(for="server") Server
+                            td
+                                select(name="server")
+                                    each Server in federation
+                                        if Server.Policy.AllowOutgoing
+                                        option(value=Server.Name) #{Server.Name}
+                        tr
+                            td
+                                label(for="character") Character
+                            td
+                              select(name="character")
+                                each Character in characters
+                                    option(value=Character.datauri) #{Character.Name}
                     input(type="submit" name="select" value="Transfer Now")
