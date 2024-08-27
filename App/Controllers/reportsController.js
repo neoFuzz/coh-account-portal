@@ -80,7 +80,10 @@ class ReportsController {
             // Check and prepare query for character placeholders
             if (/@CHARACTER_NAME|@CHARACTER_CID/.test(query)) {
                 if (account && account !== 'null') {
-                    characters = await this.queryDatabase('SELECT ContainerId, Name FROM cohdb.dbo.Ents WHERE AuthId = ? ORDER BY Name', [account]);
+                    characters = await this.queryDatabase(`
+                        SELECT ContainerId, Name
+                        FROM cohdb.dbo.Ents
+                        WHERE AuthId = ? ORDER BY Name`, [account]);
                     if (character && character !== 'null') {
                         if (/@CHARACTER_NAME/.test(query)) {
                             const characterName = characters.find(row => row.ContainerId === character);
@@ -146,7 +149,10 @@ class ReportsController {
 
     async fetchCharacters(sql, accountId) {
         return new Promise((resolve, reject) => {
-            sql.fetchNumeric('SELECT Ents.ContainerId, Ents.Name FROM cohdb.dbo.Ents WHERE AuthId = ? ORDER BY Name',
+            sql.fetchNumeric(`
+                SELECT Ents.ContainerId, Ents.Name
+                FROM cohdb.dbo.Ents
+                WHERE AuthId = ? ORDER BY Name`,
                 [accountId], (err, rows) => {
                     if (err) return reject(err);
                     resolve(rows);

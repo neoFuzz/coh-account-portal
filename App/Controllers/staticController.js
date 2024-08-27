@@ -22,17 +22,16 @@ class StaticController {
 
             const data = {
                 title: process.env.portal_name,
-                portal_url: process.env.PORTAL_URL, // URL for the image
+                portal_url: global.httpUrl, // URL for the image
                 menuTree: menu,
                 portlLfgOnly: process.env.PORTAL_LFG_ONLY,
-                online: online, // online.List.length and online.Count
+                online: online, // contains online.List.length and online.Count
                 maplist: online.MapList,
                 accounts: accounts,
                 characters: characters,
                 status: status,
                 username: req.session.account?.username || null,
             };
-            // maybe extra logging here, unsure? //global.appLogger.info(`StaticController.home(): ${JSON.stringify(data.status)}`);
             res.render('index', data);
         } catch (err) {
             // Handle error
@@ -70,6 +69,14 @@ class StaticController {
         }
     }
 
+
+    /**
+     * Render a static page based on the provided page parameter.
+     * @note Should be able to serve pages from the `core/` directory
+     *
+     * @param {*} req 
+     * @param {*} res 
+     */
     async page(req, res) {
         const page = req.params.page;
 
@@ -78,7 +85,7 @@ class StaticController {
         } catch (err) {
             global.appLogger.error(`StaticController.page(): ${err}`);
             // Handle 404
-            res.status(404).render('core/404'); // Ensure you have a 404 template
+            res.status(404).render('core/404');
         }
     }
 }

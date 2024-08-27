@@ -1,5 +1,5 @@
 // DBFlag.js
-const BitField = require('./BitField.js'); // Adjust the path as necessary
+const BitField = require('./BitField.js');
 
 class DBFlag extends BitField {
     static get constants() {

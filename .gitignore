@@ -3,10 +3,11 @@
 !README.md
 *.swp
 config.env
-federation.php
 /templates/*.phtml
 /backups/*
 !.htaccess
 reports.user.php
 /node_modules/
 sessions
+config/cert.pem
+config/key.pem

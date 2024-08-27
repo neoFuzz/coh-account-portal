@@ -1,0 +1,26 @@
+//- manifest.pug
+
+doctype xml
+xml(version='1.0', encoding='UTF-8')
+  sunrise-manifest(version='1.0', game='com.coh')
+    name= portalName
+
+    servers
+      //- Server blocks
+      each server in servers
+        //- Replace with your server structure
+        server(type=server.type)
+          name= server.name
+          ip= server.ip
+
+    applications
+      //- Application blocks
+      each application in applications
+        //- Replace with your application structure
+        application(name=application.name, version=application.version)
+
+    runtimes
+      //- Runtime blocks
+      each runtime in runtimes
+        //- Replace with your runtime structure
+        runtime(name=runtime.name, version=runtime.version)

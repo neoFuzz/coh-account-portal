@@ -1,4 +1,3 @@
-const sql = require('../Util/SqlServer.js');
 const { execSync } = require('child_process');
 const axios = require('axios');
 const SqlServer = require('../Util/SqlServer.js');
@@ -50,13 +49,13 @@ class CoHStats {
         return !(process.env.PORTAL_LFG_ONLY === 'true' && (!row.LfgFlags || row.LfgFlags === 0 || row.LfgFlags === 128));
       }).length;
 
-      const mapName = {}; // You need to implement map name mapping
+      const mapName = {};
       const onlineList = rows
         .filter(row => row.AccessLevel < process.env.PORTAL_HIDE_CSR &&
           (process.env.PORTAL_LFG_ONLY !== 'true' || row.LfgFlags && row.LfgFlags !== 0 && row.LfgFlags !== 128))
         .map(row => ({
           ...row,
-          MapName: mapName[row.StaticMapId] // Replace with actual map name mapping logic
+          MapName: mapName[row.StaticMapId]
         }));
 
       return { Count: onlineCount, List: onlineList };

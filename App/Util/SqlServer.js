@@ -56,8 +56,8 @@ class SqlServer {
         return data;
     }
 
-    fetchNumeric(query, params, callback) {
-        this.query(query, params, (err, rows) => {
+    async fetchNumeric(query, params, callback) {
+        await this.query(query, params, (err, rows) => {
             if (err) {
                 return callback(err, null);
             }

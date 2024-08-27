@@ -7,24 +7,24 @@ class MenuController {
         this.menu = [];
         this.account = username;
 
-        this.menu.push(new MenuItem('Home', process.env.PORTAL_URL));
+        this.menu.push(new MenuItem('Home', global.httpUrl));
 
         if (!this.isAccountSet()) {
-            this.menu.push(new MenuItem('Create Account', `${process.env.PORTAL_URL}create`));
+            this.menu.push(new MenuItem('Create Account', `${global.httpUrl}create`));
         }
 
-        this.menu.push(new MenuItem('My Account', `${process.env.PORTAL_URL}manage`));
+        this.menu.push(new MenuItem('My Account', `${global.httpUrl}manage`));
 
         if (this.isAccountSet() && this.isAdmin()) {
-            this.menu.push(new MenuItem('Admin', `${process.env.PORTAL_URL}admin/`));
-            this.menu.push(new MenuItem('Reports', `${process.env.PORTAL_URL}admin/reports`));
+            this.menu.push(new MenuItem('Admin', `${global.httpUrl}admin/`));
+            this.menu.push(new MenuItem('Reports', `${global.httpUrl}admin/reports`));
             let reportsList = new MenuItem('Reports List');
-            reportsList.add(new MenuItem('Player Reports', `${process.env.PORTAL_URL}admin/reports/players`));
+            reportsList.add(new MenuItem('Player Reports', `${global.httpUrl}admin/reports/players`)); // TODO: fix submenus
             this.menu.push(reportsList);
         }
 
         if (this.isAccountSet()) {
-            this.menu.push(new MenuItem('Logout', `${process.env.PORTAL_URL}logout`));
+            this.menu.push(new MenuItem('Logout', `${global.httpUrl}logout`));
         }
     }
 
@@ -51,11 +51,11 @@ class MenuController {
 
             const data = {
                 portal_name: process.env.portal_name,
-                portal_url: process.env.PORTAL_URL,
+                portal_url: global.httpUrl,
                 portal_style: process.env.portal_style,
                 menu_tree: result,
                 online: onlineList,
-                portal_lfg_only: process.env.portal_lfg_only,
+                portal_lfg_only: process.env.PORTAL_LFG_ONLY,
                 maplist: Maps.ID
             };
 

@@ -20,7 +20,7 @@ class AdminController {
         if (!AdminController.adminCheck(req, res)) {
             return;
         }
-        res.render('page-admin'); // 'views/page-admin.pug'
+        res.render('page-admin');
     }
 
     static async listAccount(req, res) {
@@ -95,7 +95,6 @@ class AdminController {
         try {
             await AdminController.verifyLogin(req);
 
-            // catch a weird bug with static content using this: !== 'favicon.ico' ? req.params.uid : null
             const uid = req.params.uid;
             const account = new GameAccount()
             await account.fetchAccountByUid(uid);

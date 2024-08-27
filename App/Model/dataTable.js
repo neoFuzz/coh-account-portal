@@ -1,13 +1,31 @@
 const sql = require('msnodesqlv8');
 const { URLSearchParams } = require('url');
 
+/**
+ * DataTable class to handle server-side processing for DataTables
+ *
+ * @class DataTable
+ */
 class DataTable {
+    /**
+     * Creates an instance of DataTable.
+     *
+    * @param {string} [query=''] - The SQL query string to be executed. Defaults to an empty string.
+    * @param {Array} [params=[]] - An array of parameters to be used with the SQL query. Defaults to an empty array.
+    */
     constructor(query = '', params = []) {
-        this.connectionString = process.env.DB_CONNECTION; // Ensure this environment variable is set
+        this.connectionString = process.env.DB_CONNECTION;
         this.query = query;
         this.params = params;
     }
 
+    /**
+     * Execute a SQL query with parameters
+     *
+     * @param {string} query 
+     * @param {Array} params 
+     * @param {Function} callback 
+     */
     executeQuery(query, params, callback) {
         sql.query(this.connectionString, query, params, (err, rows) => {
             if (err) {
@@ -19,6 +37,15 @@ class DataTable {
         });
     }
 
+    /**
+     * Retrieves the column names for a specified table.
+     * 
+     * @param {string} tableName - The name of the table whose columns are to be retrieved.
+     * @param {function(Error, Array<Object>):void} callback - A callback function that is called with the results. 
+     *   The first parameter is an error object (or `null` if no error occurred), and the second parameter is an array of row objects representing the column names.
+     * 
+     * @returns {void} This method does not return a value; instead, it uses the callback function to return results or errors.
+     */
     async getColumns(tableName, callback) {
         const query = 'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?';
         this.executeQuery(query, [tableName], (err, rows) => {
@@ -27,6 +54,20 @@ class DataTable {
         });
     }
 
+    /**
+     * Handles a request to retrieve JSON data with support for pagination, searching, and sorting.
+     * 
+     * @param {Object} req - The request object containing query parameters for filtering, sorting, and pagination.
+     * @param {function(Error, Object):void} callback - A callback function that is called with the results.
+     *   - The first parameter is an error object (or `null` if no error occurred).
+     *   - The second parameter is an object containing:
+     *     - `draw` {number} - The draw counter for client-side processing.
+     *     - `recordsTotal` {number} - The total number of records without filtering.
+     *     - `recordsFiltered` {number} - The number of records after applying the search filter.
+     *     - `data` {Array<Object>} - An array of objects representing the queried records.
+     * 
+     * @returns {void} This method does not return a value; instead, it uses the callback function to return results or errors.
+     */
     async getJSON(req, callback) {
         const urlParams = new URLSearchParams(req.query);
         const searchValue = urlParams.get('search[value]') || '';

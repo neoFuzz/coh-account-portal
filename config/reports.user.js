@@ -15,6 +15,8 @@ const reports = {
         `,
         transpose: false
     }
+
+// add a comma (,) after the brace (}) then add report blob above this line
 };
 
 module.exports = reports;

@@ -4,10 +4,10 @@ const SunriseController = require('../App/Controllers/sunriseController');
 
 const sunriseController = new SunriseController();
 
-router.get('/manifest.xml', sunriseController.manifest);
-router.get('/uptime.xml', sunriseController.uptime);
+router.get('/manifest.xml', sunriseController.manifest.bind(sunriseController));
+router.get('/uptime.xml', sunriseController.uptime.bind(sunriseController));
 
-router.get('/manifest', sunriseController.manifest);
-router.get('/uptime', sunriseController.uptime);
+router.get('/manifest', sunriseController.manifest.bind(sunriseController));
+router.get('/uptime', sunriseController.uptime.bind(sunriseController));
 
 module.exports = router;

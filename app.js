@@ -1,11 +1,13 @@
 'use strict';
 require('dotenv').config();
-let debug = require('debug')('my express app');
+const https = require('https');
+const fs = require('fs');
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const winston = require('winston');
 const MonoLogger = require('./App/Util/MonoLogger');
+const crypto = require('crypto');
 const Redis = require('redis');
 const RedisStore = require('connect-redis').default;
 const SQLiteStore = require('connect-sqlite3')(session);
@@ -15,7 +17,6 @@ let favicon = require('serve-favicon');
 let cookieParser = require('cookie-parser');
 let requireDir = require('require-dir');
 let routes = requireDir('./routes');
-const crypto = require('crypto');
 const globalData = require('./App/Middleware/globalData');
 
 let app = express();
@@ -38,11 +39,27 @@ const logger = winston.createLogger({
     ]
 });
 
-// Set the logger instance in MonoLogger
+// Set the logger instance in MonoLogger - It is a wrapper class to help with code converted from PHP
 MonoLogger.setLogger(logger);
 global.appLogger = MonoLogger.getLogger();
 global.appLogger.info('Logger is successfully set up!');
 const appLogger = global.appLogger;
+
+// ******** Check for HTTPS setup ********
+let httpsSet = false;
+const options = {
+    key: '', // blank objects
+    cert: ''
+};
+
+// Check SSL certificate and key exist
+if (fs.existsSync(process.env.KEY) && fs.existsSync(process.env.CERTIFICATE)) {
+    // Load SSL certificate and key
+    options.key = fs.readFileSync(process.env.KEY);
+    options.cert = fs.readFileSync(process.env.CERTIFICATE);
+    httpsSet = true;
+    appLogger.info('SSL certificate and key found. HTTPS will be enabled.');
+}
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -50,7 +67,11 @@ app.set('view engine', 'pug');
 
 // Configure session middleware
 appLogger.info('Configuring session middleware...');
+
+// If favicon-serve isn't set up first, causes some weird problems
 app.use(favicon(__dirname + '/public/favicon.ico'));
+
+// Session cache set up
 let sessionStore;
 let ssReady = false;
 
@@ -82,6 +103,7 @@ if (!ssReady) {
     sessionStore = new session.MemoryStore();
 }
 
+// Finish session store setup
 app.use(session({
     store: sessionStore,
     secret: process.env.SESSION_KEY,
@@ -89,39 +111,43 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        secure: process.env.NODE_ENV === 'production'
+        secure: httpsSet
     }
 }));
 
-app.use(csurf());
-
-app.use(function (req, res, next) {
-    res.cookie("mytoken", req.csrfToken());
-    next();
-});
-
 // Set up more Middleware
-let csrfProtection = csurf({ cookie: true });
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(globalData);
+
+// CSRF protection stuff
+let csrfProtection = csurf({ cookie: true });
 app.use(csrfProtection);
+
+app.use(function (req, res, next) {
+    res.cookie("csrf-token", req.csrfToken());
+    next();
+});
 
 // Middleware to generate nonce and add to response locals
 app.use((req, res, next) => {
     res.locals.cspNonce = crypto.randomBytes(16).toString('base64');
     next();
-  });
-  
-  // Middleware to set CSP header
-  app.use((req, res, next) => {
+});
+
+// Middleware to set CSP header
+app.use((req, res, next) => {
     const nonce = res.locals.cspNonce;
     res.setHeader("Content-Security-Policy", `script-src 'self' 'nonce-${nonce}'`);
     next();
-  });
+});
+
+// TODO: Change SqlServer in to a wrapper class to allow other types of SQL servers (like Postgres)
+// Setup SQL Server wrapper module
+//global.sqlServer = new (require('./App/Util/SqlServer'))(process.env.DB_CONNECTION);
 
 // ******** Map routes ********
 appLogger.info('Mapping routes...');
@@ -133,7 +159,6 @@ for (let i in routes) {
 }
 
 // ******** set up server federation ********
-const fs = require('fs');
 appLogger.info("Initiating server federation...");
 
 // Load the JSON file
@@ -145,7 +170,7 @@ global.federation = [];
 try {
     global.federation = JSON.parse(fileContent);
 } catch (e) {
-    appLogger.warn('Prolem with importing servers from file: ', e);
+    appLogger.warn('Problem with importing servers from file: ', e);
     appLogger.warn('Check the file is a vaild JSON file. Continuing without federation...');
 }
 
@@ -168,7 +193,7 @@ app.use(function (req, res, next) {
 
 // development error handler
 // will print stacktrace
-if (app.get('env') === 'development') {
+if (process.env.portal_error_reporting === 'dev') {
     app.use(function (err, req, res, next) {
         res.status(err.status || 500);
         res.render('error', {
@@ -190,7 +215,17 @@ app.use(function (err, req, res, next) {
 
 // ******** Start the web service ********
 app.set('port', PORT);
-global.appLogger.info("Web server is ready on port " + PORT);
-let server = app.listen(app.get('port'), function () {
-    debug('Express server listening on port ' + server.address().port);
-});
+if (httpsSet) {
+    // Create HTTPS server
+    https.createServer(options, app).listen(PORT, () => {
+        global.appLogger.info('Web Server using HTTPS running on port ' + PORT);
+        global.httpUrl = `https://${process.env.PORTAL_URL}${PORT === '443' ? "" : ":"+PORT}/`;
+
+    });
+} else {
+    app.listen(app.get('port'), function () {
+        global.appLogger.info("Web server is running on port " + PORT);
+        global.appLogger.warn("It is recommended to use HTTPS instead!");
+        global.httpSet = `http://${process.env.PORTAL_URL}:${PORT}/`;
+    });
+}

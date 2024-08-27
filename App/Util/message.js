@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { decrypt, encrypt } = require('./dataHandling'); // Adjust the path to your utility functions
+const { decrypt, encrypt } = require('./dataHandling');
 
 class Message {
     constructor(to = '', from = '') {

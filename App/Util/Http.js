@@ -1,5 +1,10 @@
 const axios = require('axios');
 
+/**
+ * A class for making HTTP requests. Not to be confused with other Http classes.
+ *
+ * @class Http
+ */
 class Http {
     /**
      * Perform a GET request.

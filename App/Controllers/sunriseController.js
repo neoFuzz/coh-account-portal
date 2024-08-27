@@ -11,7 +11,10 @@ class SunriseController {
         res.setHeader('Content-Type', 'text/xml');
 
         res.render('sunrise/manifest', {
-            portalName: process.env.portal_name
+            portalName: process.env.portal_name,
+            servers: [],
+            applications: [],
+            runtimes: []
         });
     }
 
@@ -19,33 +22,27 @@ class SunriseController {
         res.setHeader('Content-Type', 'text/xml');
         const zuluTime = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'); // Equivalent to '%Y-%m-%dT%H:%M:%SZ'
 
-        let authServer = '';
-        let gameServer = '';
+        let xmlServers = [];
 
         // TODO: Authserver check
-        authServer += '<server type="auth>';
-        authServer += '<available value="true" />';
-        authServer += '</server>';
+        xmlServers.push({ type: "auth", available: true });
 
         try {
-            const servers = await this.sql.fetchAssoc('SELECT name, inner_ip FROM cohauth.dbo.server');
+            const servers = await this.sql.query('SELECT name, inner_ip FROM cohauth.dbo.server');
 
             for (const row of servers) {
-                gameServer += '<server type="game">';
-                gameServer += `<name>${row.name}</name>`;
-
                 const gameStats = new CoHStats();
                 const status = await gameStats.getServerStatus();
-                if (status.status === 'Online') {
-                    gameServer += '<available value="true" />';
-                } else {
-                    gameServer += '<available value="false" />';
-                }
 
                 // Query for online players
-                const online = this.sql.fetchNumeric('SELECT count(*) FROM cohdb.dbo.ents WHERE Active > 0');
-                gameServer += `<players current="${online[0][0]}" />`;
-                gameServer += '</server>';
+                const online = await this.sql.query('SELECT count(*) FROM cohdb.dbo.ents WHERE Active > 0');
+
+                xmlServers.push({
+                    type: "game",
+                    name: row.name,
+                    available: status.status === 'Online',
+                    players: online[0]["Column0"]
+                })
             }
         } catch (err) {
             // Handle error
@@ -56,8 +53,7 @@ class SunriseController {
         res.render('sunrise/uptime', {
             portalName: process.env.portal_name,
             zuluTime: zuluTime,
-            authServer: authServer,
-            gameServer: gameServer
+            servers: xmlServers
         });
     }
 }

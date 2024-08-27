@@ -1,0 +1,24 @@
+//- uptime.pug
+
+doctype xml
+xml(version='1.0', encoding='UTF-8')
+    sunrise-manifest(version='1.0', game='com.coh')
+    name= portalName
+    updated= zuluTime
+
+    servers
+        server(type="website")
+            name #{portalName} home page
+            available(value="true", last-available=`${zuluTime}`)
+        //- will need to make customisation options in similar fashion to how Reports is handled.
+        if servers
+            each item in servers
+                server(type=item.type)
+                    if item.type == "game"
+                        available(value="true")
+                        name #{item.name}
+                        players(current=`${item.players}`)
+                    else
+                        available(value="true", last-available=`${zuluTime}`)
+                    
+                    

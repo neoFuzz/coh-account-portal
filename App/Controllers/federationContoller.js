@@ -32,7 +32,7 @@ class FederationController {
 
             // If the character is locked for transfer already, abort
             const isLocked = await this.queryDatabase(connectionString,
-                 'SELECT AccSvrLock FROM cohdb.dbo.Ents2 WHERE ContainerId = ? AND AccSvrLock IS NOT NULL', [containerId]);
+                'SELECT AccSvrLock FROM cohdb.dbo.Ents2 WHERE ContainerId = ? AND AccSvrLock IS NOT NULL', [containerId]);
             if (isLocked.length > 0) {
                 return res.render('core/page-generic-message.pug', {
                     title: 'Character Locked',
@@ -84,11 +84,11 @@ class FederationController {
                 req.session.nextpage = '/federation/review-policy';
                 req.session.pullcharacter = { character: message.character, from: message.from };
 
-                return res.redirect(`${process.env.PORTAL_URL}login`);
+                return res.redirect(`${global.httpUrl}/login`);
             }
         } catch (err) {
             global.appLogger.warn(err);
-            return res.redirect(`${process.env.PORTAL_URL}login`);
+            return res.redirect(`${global.httpUrl}/login`);
         }
     }
 
@@ -181,7 +181,10 @@ class FederationController {
                     throw new Error('Deleting character from the remote server failed.');
                 }
             } else {
-                await Http.post(`${fedServer.Url}/federation/clear-transfer`, { character: req.session.pullcharacter.character, skipredirect: 'true' });
+                await Http.post(`${fedServer.Url}/federation/clear-transfer`, {
+                    character: req.session.pullcharacter.character,
+                    skipredirect: 'true'
+                });
             }
 
             // Put the character into the database
@@ -204,11 +207,14 @@ class FederationController {
         const connectionString = process.env.DB_CONNECTION;
 
         try {
-            await this.queryDatabase(connectionString, 'UPDATE cohdb.dbo.Ents2 SET AccSvrLock = null FROM cohdb.dbo.Ents INNER JOIN cohdb.dbo.Ents2 ON Ents.ContainerId = Ents2.ContainerId WHERE Ents.Name = ?',
+            await this.queryDatabase(connectionString,
+                `UPDATE cohdb.dbo.Ents2 SET AccSvrLock = null
+                  FROM cohdb.dbo.Ents INNER JOIN cohdb.dbo.Ents2
+                  ON Ents.ContainerId = Ents2.ContainerId WHERE Ents.Name = ?`,
                 [decrypt(decodeURIComponent(req.body.character), process.env.PORTAL_KEY, process.env.PORTAL_IV)]);
 
             if (!req.body.skipredirect) {
-                return res.redirect(`${process.env.PORTAL_URL}manage`);
+                return res.redirect(`${global.httpUrl}manage`);
             } else {
                 return res.status(200).send('Success');
             }
@@ -231,7 +237,7 @@ class FederationController {
     }
 
     findFederationServerByName(name) {
-        const federationServers = global.federation; // or require a config file
+        const federationServers = global.federation;
         const server = federationServers.find(item => item.Name.toLowerCase().includes(name.toLowerCase()));
 
         if (!server) {
