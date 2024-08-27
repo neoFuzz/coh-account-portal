@@ -16,6 +16,7 @@ module.exports = async (req, res, next) => {
 
         res.locals.globalData = {
             title: process.env.portal_name,
+            portal_name: process.env.portal_name,
             portal_url: global.httpUrl,
             portal_style: process.env.PORTAL_STYLE,
             portalLfgOnly: process.env.PORTAL_LFG_ONLY,

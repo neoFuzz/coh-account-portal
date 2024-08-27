@@ -5,7 +5,7 @@ html
     if title 
       title= title
     link(rel='stylesheet', href='/stylesheets/main.css')
-    link(rel='stylesheet', href='/stylesheets/'+globalData.portal_style+'/style.css')
+    link(rel='stylesheet', href=`/stylesheets/${globalData.portal_style}/style.css`)
     block additional_headers
   body
     include sidebar.pug

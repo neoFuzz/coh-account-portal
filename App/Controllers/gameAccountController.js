@@ -1,3 +1,4 @@
+const { render } = require('pug');
 const GameAccount = require('../Model/gameAccount.js');
 
 class GameAccountController {
@@ -48,8 +49,8 @@ class GameAccountController {
             if (req.session.account) {
                 return res.redirect(req.session.nextpage || '/');
             }
-
-            res.render('page-login', { nextpage: 'login' });
+            const renderData = { nextpage: 'login', ...res.locals };
+            res.render('page-login', renderData);
         }
     }
 

@@ -7,9 +7,9 @@ block body_content
 
     .block
         .blocktitle
-            | Login to #{portal_name}
+            | Login to #{globalData.portal_name}
         .blockbody
-            p You are logging into #{portal_name}. Please enter your username and password below.
+            p You are logging into #{globalData.portal_name}. Please enter your username and password below.
             form(method='post', action='login')
                 table(width='100%')
                     tr
@@ -24,5 +24,5 @@ block body_content
                             input(type='password', name='password')
                     tr
                         td(colspan='2', align='right')
-                            input(type='submit', name='login', value='Login')
+                            input(type='submit', name='login', value='login')
                 input(type='hidden', name='nextpage', value=nextpage)

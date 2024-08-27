@@ -111,7 +111,7 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        secure: httpsSet
+        secure: false //httpsSet
     }
 }));
 
@@ -120,17 +120,19 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
 app.use(globalData);
+app.use(express.static(path.join(__dirname, 'public')));
+
+// app.use(csurf());
+
+// app.use(function (req, res, next) {
+//     res.cookie("csrf-token", req.csrfToken());
+//     next();
+// });
 
 // CSRF protection stuff
-let csrfProtection = csurf({ cookie: true });
-app.use(csrfProtection);
-
-app.use(function (req, res, next) {
-    res.cookie("csrf-token", req.csrfToken());
-    next();
-});
+// let csrfProtection = csurf({ cookie: true });
+// app.use(csrfProtection);
 
 // Middleware to generate nonce and add to response locals
 app.use((req, res, next) => {

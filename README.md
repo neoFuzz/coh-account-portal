@@ -19,6 +19,7 @@ This implementation intends to be more standalone over it's PHP predecessor.
 * Open the command line, navigate to the directory where you extracted the repository and run `npm install`. This will download required dependencies.
 
 * Configuration is stored in the `.env` file. Edit the file and update some of the values. Just put some random typing as your KEY and IV values.
+    * To use HTTPS and SSL, you need to create a self-signed certificate or obtain one from an SSL provider. Then edit the KEY and CERTIFICATE to have correct the file paths.
 
 * Run the Account Portal web server with `npm run start`
 

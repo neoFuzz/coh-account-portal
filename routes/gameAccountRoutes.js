@@ -4,10 +4,10 @@ const GameAccountController = require('../App/Controllers/gameAccountController'
 
 const gameAccountController = new GameAccountController();
 
-router.get('/login', gameAccountController.login);
-router.post('/login', gameAccountController.login);
-router.get('/logout', gameAccountController.logout);
-router.post('/create', gameAccountController.create);
-router.post('/changepassword', gameAccountController.changePassword);
+router.get('/login', gameAccountController.login.bind(gameAccountController));
+router.post('/login', gameAccountController.login.bind(gameAccountController));
+router.get('/logout', gameAccountController.logout.bind(gameAccountController));
+router.post('/create', gameAccountController.create.bind(gameAccountController));
+router.post('/changepassword', gameAccountController.changePassword.bind(gameAccountController));
 
 module.exports = router;

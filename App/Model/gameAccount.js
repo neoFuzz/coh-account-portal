@@ -255,6 +255,28 @@ class GameAccount {
         );
         return rows.length > 0;
     }
+
+    async banAccount(date) {
+        try {
+            if (date === null || date === undefined || date === '') {
+                date = new Date().toISOString().slice(0, 19).replace('T', ' ');
+            } else {
+                date = new Date(date).toISOString().slice(0, 19).replace('T', ' ');
+            }
+            // SQL execute query to set block_end_date using date
+            await this.executeQuery(
+                'UPDATE cohauth.dbo.user_account SET block_end_date = ? WHERE UPPER(account) = UPPER(?)',
+                [date, this.username]
+            );
+            
+            await this.executeQuery(
+                'UPDATE cohauth.dbo.user_account SET block_flag = 1 WHERE UPPER(account) = UPPER(?)',
+                [this.username]
+            );
+        } catch (error) {
+            throw new Error('Error banning account');
+        }
+    }
 }
 
 module.exports = GameAccount;
