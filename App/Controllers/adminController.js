@@ -144,6 +144,30 @@ class AdminController {
 
     }
 
+    static async banAccount(req, res) {
+        try {
+            await AdminController.verifyLogin(req);
+
+            const uid = req.params.uid;
+            const endDate = req.body.date || null;
+            const account = new GameAccount()
+            await account.fetchAccountByUid(uid);
+
+            await account.banAccount(endDate);
+
+            res.render('page-generic-message', {
+                title: "Account Banned",
+                message: `account was banned<br><a href="/admin/${uid}">Go Back</a>`
+            });
+        } catch (error) {
+            global.appLogger.error('AdminController.banAccount(): ', error);
+            res.render('page-generic-message', {
+                title: "Error: Account ban problem",
+                message: `account was not banned<br><a href="/admin/${uid}">Go Back</a>`
+            });
+        }
+    }
+
     static async verifyLogin(req) {
         if (!req.session.account) {
             throw new Error('You must be logged in to access this page.');

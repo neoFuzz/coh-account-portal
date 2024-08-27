@@ -11,6 +11,7 @@ block body_content
         .blockbody
             p You are logging into #{globalData.portal_name}. Please enter your username and password below.
             form(method='post', action='login')
+                input(type="hidden", name="_csrf", value=csrfToken)
                 table(width='100%')
                     tr
                         td.align-right

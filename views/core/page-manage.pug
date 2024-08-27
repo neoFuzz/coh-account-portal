@@ -7,6 +7,7 @@ block body_content
             .blockbody
                 | If you would like to change your password, enter a new password below, then click "Change Password".
                 form(method="post", action="changepassword")
+                    input(type="hidden", name="_csrf", value=csrfToken)
                     table(width="100%")
                         tr
                             td(align="right")
@@ -34,12 +35,14 @@ block body_content
                             li
                                 | #{lockedCharacter.name} - #{lockedCharacter.AccSvrLock}
                                 form(method="post", action=portal_url + "federation/clear-transfer" style="display: inline-block;")
+                                    input(type="hidden", name="_csrf", value=csrfToken)
                                     input(type="submit" value="Unlock")
                                     input(type="hidden" name="character" value=character.datauri)
         .block
             .blocktitle Character Transfer
             .blockbody
                 form(method="post" action="./federation/transfer-character-request")
+                    input(type="hidden", name="_csrf", value=csrfToken)
                     p Please select a server and character to transfer:
                     table
                         thead

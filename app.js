@@ -123,19 +123,20 @@ app.use(cookieParser());
 app.use(globalData);
 app.use(express.static(path.join(__dirname, 'public')));
 
-// app.use(csurf());
-
-// app.use(function (req, res, next) {
-//     res.cookie("csrf-token", req.csrfToken());
-//     next();
-// });
-
 // CSRF protection stuff
-// let csrfProtection = csurf({ cookie: true });
-// app.use(csrfProtection);
+let csrfProtection = csurf({
+    cookie: {
+        httpOnly: !httpsSet,
+        secure: httpsSet,
+        maxAge: 3600000 // 1 hour
+    }
+});
+app.use(csrfProtection);
 
-// Middleware to generate nonce and add to response locals
-app.use((req, res, next) => {
+// Middleware to add csrf-token, generate nonce then add to response locals
+app.use(function (req, res, next) {
+    res.cookie("csrf-token", req.csrfToken());
+    res.locals.csrfToken = req.csrfToken();
     res.locals.cspNonce = crypto.randomBytes(16).toString('base64');
     next();
 });
@@ -221,7 +222,7 @@ if (httpsSet) {
     // Create HTTPS server
     https.createServer(options, app).listen(PORT, () => {
         global.appLogger.info('Web Server using HTTPS running on port ' + PORT);
-        global.httpUrl = `https://${process.env.PORTAL_URL}${PORT === '443' ? "" : ":"+PORT}/`;
+        global.httpUrl = `https://${process.env.PORTAL_URL}${PORT === '443' ? "" : ":" + PORT}/`;
 
     });
 } else {

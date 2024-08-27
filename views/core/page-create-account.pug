@@ -10,6 +10,7 @@ block body_content
             //- Edit the create.html file to update with your own EULA, Terms of Service etc.
             include ../html/create.html
             form(method="post" action="/create")
+                input(type="hidden", name="_csrf", value=csrfToken)
                 table(width="100%")
                     tr
                     td(align="right")

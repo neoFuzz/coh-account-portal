@@ -256,6 +256,13 @@ class GameAccount {
         return rows.length > 0;
     }
 
+    /**
+     * Ban the account from playing.
+     * 
+     * @todo Not even sure this is correct, need to check SQL query and test.
+     * @note It's a working template to fix up later.
+     * @param {string} date - Date to ban account until (optional)
+     */
     async banAccount(date) {
         try {
             if (date === null || date === undefined || date === '') {

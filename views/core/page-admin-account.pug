@@ -24,6 +24,7 @@ block body_content
                     td
                         label(for="password") Reset Password
                         form(method="post", action=globalData.portal_url+`admin/${uid}/password`)
+                            input(type="hidden", name="_csrf", value=csrfToken)
                             input(type="password", name="password")
                             input(type="submit", value="Change Password")
 
@@ -35,6 +36,7 @@ block body_content
                     td
                         label(for="date") Ban Expiry
                         form(method="post", action=globalData.portal_url+`admin/${uid}/ban`)
+                            input(type="hidden", name="_csrf", value=csrfToken)
                             input(type="text", name="date", id="bandate")
                             input(type="submit", value="Ban Account")
             if online
