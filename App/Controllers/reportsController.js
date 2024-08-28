@@ -5,6 +5,7 @@ const sql = require('msnodesqlv8');
 class ReportsController {
     constructor(container) {
         this.container = container;
+        this.reports = [];
     }
 
     async listReports(req, res) {
@@ -13,14 +14,7 @@ class ReportsController {
         }
 
         try {
-            // Include the reports.default.js file
-            let reports = require('../Reports/reports.default.js');
-
-            // Include user-specific reports if available
-            const userFile = path.join(__dirname, '../../config/reports.user.js');
-            if (fs.existsSync(userFile)) {
-                Object.assign(reports, require(userFile));
-            }
+            const reports = this.buildReports();
 
             res.render('core/page-reports', { reports });
         } catch (error) {
@@ -29,11 +23,7 @@ class ReportsController {
         }
     }
 
-    async report(req, res) {
-        if (!this.verifyLogin(req)) {
-            res.redirect('/login');
-        }
-        // Load the report configuration
+    buildReports() {
         // Include the reports.default.js file
         let reports = require('../Reports/reports.default.js');
 
@@ -42,6 +32,19 @@ class ReportsController {
         if (fs.existsSync(userFile)) {
             Object.assign(reports, require(userFile));
         }
+        if (this.reports.length === 0) {
+            this.reports = reports;
+        }
+        return reports;
+    }
+
+
+    async report(req, res) {
+        if (!this.verifyLogin(req)) {
+            res.redirect('/login');
+        }
+        
+        let reports = this.buildReports();
 
         const character = req.query.character || null;
         const account = req.query.account || null;

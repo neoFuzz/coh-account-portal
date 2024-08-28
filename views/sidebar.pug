@@ -6,5 +6,5 @@ mixin menuMacro(menu, level = 1)
       - const activeTrailClass = item.active_trail ? 'is-active-trail' : ''
       li(class=`menu__item ${activeClass} ${activeTrailClass}`)
         a.menu__link.navitem(href=item.url class=`${activeClass} ${activeTrailClass}`)= item.text
-        if item.submenu
+        if item.submenu.length > 0
           +menuMacro(item.submenu, level + 1)

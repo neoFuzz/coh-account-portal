@@ -23,3 +23,23 @@ html
                 div(style="padding: 0.2rem")
                   div Current user: #{globalData.username} 
               include core/block-players-online.pug
+  script(type='text/javascript', nonce=cspNonce).
+    document.addEventListener('DOMContentLoaded', function() {
+        const menuItems = document.querySelectorAll('.menu__item > .menu__link');
+        menuItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                const submenu = this.nextElementSibling;
+                
+                // Only prevent default and toggle classes if there's a non-empty submenu
+                if (submenu && submenu.children.length > 0) {
+                    e.preventDefault();
+                    
+                    // Toggle the 'open' class on the clicked item
+                    this.classList.toggle('open');
+                    
+                    // Toggle the 'navopen' class on the submenu
+                    submenu.classList.toggle('navopen');
+                }
+            });
+        });
+    });

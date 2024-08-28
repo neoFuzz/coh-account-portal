@@ -111,7 +111,7 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        secure: false //httpsSet
+        secure: httpsSet
     }
 }));
 
@@ -192,11 +192,11 @@ app.use(function (req, res, next) {
     next(err);
 });
 
-// error handlers
+// general error handlers
 
 // development error handler
-// will print stacktrace
 if (process.env.portal_error_reporting === 'dev') {
+    // will print stacktrace
     app.use(function (err, req, res, next) {
         res.status(err.status || 500);
         res.render('error', {
@@ -204,17 +204,17 @@ if (process.env.portal_error_reporting === 'dev') {
             error: err
         });
     });
-}
-
-// production error handler
-// no stacktraces leaked to user
-app.use(function (err, req, res, next) {
-    res.status(err.status || 500);
-    res.render('error', {
-        message: err.message,
-        error: {}
+} else {
+    // production error handler
+    app.use(function (err, req, res, next) {
+        // no stacktraces leaked to user
+        res.status(err.status || 500);
+        res.render('error', {
+            message: err.message,
+            error: {}
+        });
     });
-});
+}
 
 // ******** Start the web service ********
 app.set('port', PORT);

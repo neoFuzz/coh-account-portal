@@ -1,5 +1,6 @@
 const SqlServer = require('../Util/SqlServer');
 const CoHStats = require('../Model/CoHStats');
+const net = require('net');
 
 class SunriseController {
     constructor(container) {
@@ -24,8 +25,9 @@ class SunriseController {
 
         let xmlServers = [];
 
-        // TODO: Authserver check
-        xmlServers.push({ type: "auth", available: true });
+        // Authserver check
+        const isActive = await this.checkPort(process.env.AUTH_SERVER, 2106);
+        xmlServers.push({ type: "auth", available: isActive });
 
         try {
             const servers = await this.sql.query('SELECT name, inner_ip FROM cohauth.dbo.server');
@@ -56,6 +58,30 @@ class SunriseController {
             servers: xmlServers
         });
     }
+
+    async checkPort(host, port) {
+        return new Promise((resolve) => {
+          const client = new net.Socket();
+      
+          client.setTimeout(3000); // Timeout after 3 seconds
+      
+          client.on('connect', () => {
+            client.destroy(); // Close the connection
+            resolve(true);   // Port is active
+          });
+      
+          client.on('error', () => {
+            resolve(false);  // Port is not active
+          });
+      
+          client.on('timeout', () => {
+            client.destroy();
+            resolve(false);  // Port is not active
+          });
+      
+          client.connect(port, host);
+        });
+      }
 }
 
 module.exports = SunriseController;

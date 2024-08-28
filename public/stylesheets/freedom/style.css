@@ -176,7 +176,7 @@ ul.onlinelist ul {
   list-style: none;
 }
 
-.nav ul li a.navitem,
+.nav > ul > li > a.navitem,
 .nav ul li a.navitemempty {
   height: 24px;
   display: block;
@@ -190,7 +190,7 @@ ul.onlinelist ul {
   background: url(main_nav_item_bg.png) no-repeat;
 }
 
-.nav ul li a.navitem:hover,
+.nav > ul > li > a.navitem:hover,
 .nav ul li a.navitemempty:hover,
 .nav ul li a.navitemhighlight {
   background-position: 0 -24px;
@@ -220,7 +220,7 @@ ul.onlinelist ul {
 
 .nav ul li ul li {
   height: auto;
-  min-height: 24px;
+  max-height: 24px;
 }
 
 .nav ul li ul li a {
@@ -230,12 +230,15 @@ ul.onlinelist ul {
   font-size: 13px;
   display: block;
   padding: 3px 0 4px 18px;
+  background-position: -172px -30px;
+  background-image: url(main_nav_item_bg.png);
+  background-repeat: no-repeat;
 }
 
 .nav ul li ul li a:hover {
   color: #88CEE8;
   background: url(main_nav_item_bg.png) no-repeat;
-  background-position: -172px 8px;
+  background-position: -173px 4px;
 }
 
 .nav ul li ul li.currentnavitem a {

@@ -15,10 +15,10 @@ xml(version='1.0', encoding='UTF-8')
             each item in servers
                 server(type=item.type)
                     if item.type == "game"
-                        available(value="true")
+                        available(value=`${item.available}`)
                         name #{item.name}
                         players(current=`${item.players}`)
                     else
-                        available(value="true", last-available=`${zuluTime}`)
+                        available(value=`${item.available}`, last-available=`${zuluTime}`)
                     
                     

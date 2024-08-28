@@ -19,7 +19,17 @@ class MenuController {
             this.menu.push(new MenuItem('Admin', `${global.httpUrl}admin/`));
             this.menu.push(new MenuItem('Reports', `${global.httpUrl}admin/reports`));
             let reportsList = new MenuItem('Reports List');
-            reportsList.add(new MenuItem('Player Reports', `${global.httpUrl}admin/reports/players`)); // TODO: fix submenus
+
+            // submenus need more work
+            // sample code: reportsList.add(new MenuItem('RichestCharacters Report', `${global.httpUrl}admin/reports/RichestCharacters`));
+
+            const ReportsController = require('./reportsController.js');
+            let reportsc = new ReportsController();
+            const reports = Object.keys(reportsc.buildReports());
+            reports.forEach(report => reportsList.add(
+                new MenuItem(`${report} Report`, `${global.httpUrl}admin/reports/${report}`)
+            ));
+
             this.menu.push(reportsList);
         }
 
@@ -35,7 +45,7 @@ class MenuController {
     async isAdmin() {
         // Setup the AdminController and use a dummy request
         const AdminController = require('./adminController');
-        const req = {session: {account: {username: this.account}}};
+        const req = { session: { account: { username: this.account } } };
         return await AdminController.verifyLogin(req);
     }
 
