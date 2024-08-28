@@ -1,16 +1,19 @@
 doctype html
-html
+html(lang="en-us")
   head
     meta(charset="UTF-8")
     if title 
       title= title
+    else
+      title= globalData.portal_name
+    meta(name="viewport" content="width=device-width, initial-scale=1")
     link(rel='stylesheet', href='/stylesheets/main.css')
     link(rel='stylesheet', href=`/stylesheets/${globalData.portal_style}/style.css`)
     block additional_headers
   body
     include sidebar.pug
     #logo
-      img(src="/images/ouroborosLogo.png" width="409")
+      img(src="/images/ouroborosLogo.png" width="409" alt="City of Heroes Logo")
     #content
       table(style="border-spacing: 1em;")
         tr

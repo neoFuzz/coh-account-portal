@@ -11,6 +11,17 @@ class DataHandling {
         }
     }
 
+    static checkUsername(username) {
+        if (!/^[a-zA-Z0-9]+$/.test(username)) {
+            throw new Error('Username must consist of letters and numbers only; no spaces or symbols.');
+        }
+
+        if (username.length === 0 || username.length > 14) {
+            throw new Error('Username must be 1-14 characters in length.');
+        }
+        return username;
+    }
+
     static validatePassword(password) {
         if (!/^[\x20-\x7E]+$/.test(password)) { // Printable characters check
             throw new Error('Password must consist only of letters, numbers, and symbols.');

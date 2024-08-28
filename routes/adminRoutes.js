@@ -16,5 +16,4 @@ router.get('/admin/list/character/:uid', AdminController.listCharacter);
 router.get('/admin/list/account', AdminController.listAccount);
 router.post('/admin/:uid/ban', AdminController.banAccount);
 
-
 module.exports = router;

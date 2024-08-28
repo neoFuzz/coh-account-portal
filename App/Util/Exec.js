@@ -11,7 +11,7 @@ class Exec {
      * 
      * @throws {Error} Throws an error if the command fails or times out
      */
-    static async exec(cmd, timeout) {
+    static async cmd_exec(cmd, timeout) {
         return new Promise((resolve, reject) => {
             const timer = setTimeout(() => {
                 process.kill(-process.pid); // Kill the child process tree

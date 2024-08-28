@@ -1,20 +1,20 @@
-//const sql = require('msnodesqlv8');
 const path = require('path');
-const { decrypt } = require('../Util/dataHandling');
 const Character = require('../Model/character');
 const Message = require('../Util/message');
 const SqlServer = require('../Util/SqlServer');
 const fs = require('fs');
 const { promisify } = require('util');
+const DataHandling = require('../Util/dataHandling');
 
 const dbConfig = process.env.DB_CONNECTION;
 
 class APIController {
     static async getCharacter(req, res) {
         try {
-            const characterName = decrypt(req.query.q, process.env.PORTAL_KEY, process.env.PORTAL_IV);
+            const characterName = DataHandling.decrypt(req.query.q, process.env.PORTAL_KEY, process.env.PORTAL_IV);
             const character = new Character();
-            await character.loadCharacter(characterName);
+            const sanitisedName = DataHandling.checkUsername(characterName);
+            await character.loadCharacter(sanitisedName);
 
             if (req.query.type === 'json') {
                 res.json(character.attributes);
@@ -40,9 +40,10 @@ class APIController {
             const sql = new SqlServer(process.env.DB_CONNECTION);
 
             // Fetch AuthId and ContainerId
-            const [rows] = sql.dbquery(
-                'SELECT AuthId, ContainerId FROM cohdb.dbo.Ents WHERE Name = ?',
-                [characterName]
+            const [rows] = sql.dbquery(`
+                SELECT AuthId, ContainerId
+                FROM cohdb.dbo.Ents
+                WHERE Name = ${characterName}`
             );
 
             if (rows.length === 0) {
@@ -52,9 +53,8 @@ class APIController {
             const [authId, containerId] = [rows[0].AuthId, rows[0].ContainerId];
 
             // Check if any characters are logged in
-            const activeCharacters = await sql.dbquery(
-                'SELECT 1 FROM cohdb.dbo.Ents WHERE AuthId = ? AND Active > 0',
-                [authId]
+            const activeCharacters = sql.dbquery(
+                `SELECT 1 FROM cohdb.dbo.Ents WHERE AuthId = ${authId} AND Active > 0`
             );
 
             if (activeCharacters.length > 0) {
@@ -62,9 +62,10 @@ class APIController {
             }
 
             // Check transfer lock
-            const transferLock = await sql.dbquery(
-                'SELECT AccSvrLock FROM cohdb.dbo.Ents2 WHERE ContainerId = ? AND AccSvrLock IS NOT NULL',
-                [containerId]
+            const transferLock = sql.dbquery(`
+                SELECT AccSvrLock FROM cohdb.dbo.Ents2
+                WHERE ContainerId = ${containerId}
+                AND AccSvrLock IS NOT NULL`
             );
 
             if (transferLock.length === 0) {
@@ -83,20 +84,20 @@ class APIController {
             await promisify(fs.writeFile)(backupFile, characterData);
 
             // Hide the character by setting AuthId to a negative value
-            await sql.dbquery(
-                'UPDATE cohdb.dbo.Ents SET AuthId = ? WHERE Name = ?',
-                [-authId, character.name]
+            sql.dbquery(
+                `UPDATE cohdb.dbo.Ents SET AuthId = ${-authId} WHERE Name = ${character.name}`
             );
 
             // Remove transfer block
-            await sql.dbquery(
-                'UPDATE cohdb.dbo.Ents2 SET AccSvrLock = null WHERE ContainerId = ?',
-                [containerId]
+            sql.dbquery(`
+                UPDATE cohdb.dbo.Ents2 SET AccSvrLock = null
+                WHERE ContainerId = ${containerId}`
             );
 
             res.send('Success');
         } catch (err) {
-            res.status(500).send('Failure: ' + err.message);
+            res.status(500).send('Failure: deleteCharacter');
+            global.appLogger.error("APIController.deleteCharacter: ", err.message);
         }
     }
 }

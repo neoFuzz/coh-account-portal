@@ -1,4 +1,0 @@
-# Safety for people who just drop this application into their htdocs
-
-order deny,allow
-deny from all

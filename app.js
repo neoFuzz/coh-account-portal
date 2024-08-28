@@ -4,6 +4,7 @@ const https = require('https');
 const fs = require('fs');
 const express = require('express');
 const session = require('express-session');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 const winston = require('winston');
 const MonoLogger = require('./App/Util/MonoLogger');
@@ -12,7 +13,6 @@ const Redis = require('redis');
 const RedisStore = require('connect-redis').default;
 const SQLiteStore = require('connect-sqlite3')(session);
 const helmet = require('helmet');
-const csurf = require('@dr.pogodin/csurf');
 let favicon = require('serve-favicon');
 let cookieParser = require('cookie-parser');
 let requireDir = require('require-dir');
@@ -20,6 +20,8 @@ let routes = requireDir('./routes');
 const globalData = require('./App/Middleware/globalData');
 
 let app = express();
+const csurf = require('@dr.pogodin/csurf');
+
 let PORT = process.env.PORT || 3000;
 
 // Create a Winston logger instance
@@ -111,7 +113,7 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        secure: httpsSet
+        secure: true
     }
 }));
 
@@ -144,13 +146,25 @@ app.use(function (req, res, next) {
 // Middleware to set CSP header
 app.use((req, res, next) => {
     const nonce = res.locals.cspNonce;
-    res.setHeader("Content-Security-Policy", `script-src 'self' 'nonce-${nonce}'`);
+    res.setHeader("Content-Security-Policy", `script-src 'self' 'nonce-${nonce}' https://cdnjs.cloudflare.com;`);
     next();
 });
 
 // TODO: Change SqlServer in to a wrapper class to allow other types of SQL servers (like Postgres)
 // Setup SQL Server wrapper module
 //global.sqlServer = new (require('./App/Util/SqlServer'))(process.env.DB_CONNECTION);
+
+// Create a rate limiter middleware with specific options
+appLogger.info('Setting up rate limiter...');
+const globalRateLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+    message: 'Too many requests from this IP, please try again later.',
+    headers: true, // Include rate limit headers in the response
+});
+
+// Apply the rate limiter globally to all routes
+app.use(globalRateLimiter);
 
 // ******** Map routes ********
 appLogger.info('Mapping routes...');

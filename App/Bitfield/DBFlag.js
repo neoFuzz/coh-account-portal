@@ -1,7 +1,16 @@
 // DBFlag.js
 const BitField = require('./BitField.js');
 
+/**
+ * DBFlag class
+ * @extends BitField
+ */
 class DBFlag extends BitField {
+    /**
+     * Get the constants for the DBFlag class
+     * @returns {Object} The constants for the DBFlag class
+     * @static
+     */
     static get constants() {
         return {
             DBFLAG_TELEPORT_XFER: 0,

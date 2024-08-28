@@ -126,7 +126,8 @@ class ReportsController {
                 character: character || ''
             });
         } catch (err) {
-            res.status(500).send(err.message);
+            res.status(500).send("Error in report module");
+            global.appLogger.error("ReportsController.reports(): ",err.message);
         }
 
     }

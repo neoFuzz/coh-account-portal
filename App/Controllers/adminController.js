@@ -5,7 +5,18 @@ const DataTable = require('../Model/dataTable.js');
 // Configure database connection
 const dbConfig = process.env.DB_CONNECTION;
 
+/**
+ * Controller class for handling admin-related operations.
+ * @class AdminController
+ */
 class AdminController {
+    /**
+     * Verifies if the user is logged in as an admin.
+     * @static
+     * @param {*} req The request object.
+     * @param {*} res The response object.
+     * @returns {boolean} Returns true if the user is logged in as an admin, false otherwise.
+     */
     static async adminCheck(req, res) {
         try {
             await AdminController.verifyLogin(req);
@@ -16,6 +27,14 @@ class AdminController {
         }
         return true;
     }
+
+    /**
+     * Renders the admin page.
+     * @static
+     * @param {*} req The request object.
+     * @param {*} res The response object.
+     * @returns {void}
+     */
     static async adminPage(req, res) {
         if (!AdminController.adminCheck(req, res)) {
             return;
@@ -23,6 +42,13 @@ class AdminController {
         res.render('page-admin');
     }
 
+    /**
+     * Handles the request to list accounts as an administrator.
+     * @static
+     * @param {*} req The request object. 
+     * @param {*} res The response object. 
+     * @returns {void} Returns a JSON response containing the account list.
+     */
     static async listAccount(req, res) {
         try {
             await AdminController.verifyLogin(req);
@@ -110,6 +136,13 @@ class AdminController {
         }
     }
 
+    /**
+     * Handles the request to list characters for a specific account as an administrator.
+     * @static
+     * @param {*} req The request object.
+     * @param {*} res The response object.
+     * @returns {void} Returns a JSON response containing the character list.
+     */
     static async listCharacter(req, res) {
         AdminController.verifyLogin(req);
         const { uid } = req.params;
@@ -144,6 +177,12 @@ class AdminController {
 
     }
 
+    /**
+     * Handles the request to ban an account as an administrator.
+     * @static 
+     * @param {*} req The request object.
+     * @param {*} res The response object.
+     */
     static async banAccount(req, res) {
         try {
             await AdminController.verifyLogin(req);
@@ -168,6 +207,13 @@ class AdminController {
         }
     }
 
+    /**
+     * Verifies if the user is logged in as an administrator.
+     * @static
+     * @param {*} req The request object.
+     * @returns {Promise<void>} A promise that resolves when the verification is complete.
+     * @throws {Error} Throws an error if the user is not logged in or if they are not an administrator.
+     */
     static async verifyLogin(req) {
         if (!req.session.account) {
             throw new Error('You must be logged in to access this page.');

@@ -1,3 +1,8 @@
+/**
+ * @class UserData
+ * @description Represents user data with various bit fields and methods to manage user permissions and features. It's currently documentation than and actual class.
+ * @extends BitField
+ */
 class UserData extends BitField
 {
     // 0x0080C2E000D00B0C000000000CB40058

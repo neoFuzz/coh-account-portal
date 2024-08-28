@@ -53,24 +53,22 @@ class MenuController {
         const gameStats = new CoHStats();
         const result = this.menu.map(item => item.getMenu());
 
-        gameStats.getOnline((err, onlineList) => {
-            if (err) {
-                onlineList = [];
-            }
-            Maps.generate();
+        let onlineList = gameStats.getOnline();
 
-            const data = {
-                portal_name: process.env.portal_name,
-                portal_url: global.httpUrl,
-                portal_style: process.env.portal_style,
-                menu_tree: result,
-                online: onlineList,
-                portal_lfg_only: process.env.PORTAL_LFG_ONLY,
-                maplist: Maps.ID
-            };
+        Maps.generate();
 
-            callback(null, data);
-        });
+        const data = {
+            portal_name: process.env.portal_name,
+            portal_url: global.httpUrl,
+            portal_style: process.env.portal_style,
+            menu_tree: result,
+            online: onlineList,
+            portal_lfg_only: process.env.PORTAL_LFG_ONLY,
+            maplist: Maps.ID
+        };
+
+        callback(null, data);
+
     }
 }
 
