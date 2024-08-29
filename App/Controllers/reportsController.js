@@ -2,12 +2,28 @@ const path = require('path');
 const fs = require('fs');
 const sql = require('msnodesqlv8');
 
+/**
+ * Reports Controller
+ * 
+ * @class ReportsController
+ */
 class ReportsController {
+    /**
+     * Creates an instance of ReportsController.
+     *
+     * @param {*} container 
+     */
     constructor(container) {
         this.container = container;
         this.reports = [];
     }
 
+    /**
+     * List reports
+     *
+     * @param {*} req - The request object
+     * @param {*} res - The response object
+     */
     async listReports(req, res) {
         if (!(await this.verifyLogin(req))) {
             res.redirect('/login');
@@ -23,6 +39,11 @@ class ReportsController {
         }
     }
 
+    /**
+     * Build reports from files and user-specific file.
+     *
+     * @returns {Object} reports - The reports object
+     */
     buildReports() {
         // Include the reports.default.js file
         let reports = require('../Reports/reports.default.js');
@@ -38,12 +59,17 @@ class ReportsController {
         return reports;
     }
 
-
+    /**
+     * Output the requested report.
+     *
+     * @param {*} req - The request object
+     * @param {*} res - The response object
+     */
     async report(req, res) {
         if (!(await this.verifyLogin(req))) {
             res.redirect('/login');
         }
-        
+
         let reports = this.buildReports();
 
         const character = req.query.character || null;
@@ -127,11 +153,16 @@ class ReportsController {
             });
         } catch (err) {
             res.status(500).send("Error in report module");
-            global.appLogger.error("ReportsController.reports(): ",err.message);
+            global.appLogger.error("ReportsController.reports(): ", err.message);
         }
 
     }
 
+    /**
+     * Verify if the user is logged in.
+     * @param {*} req - The request object
+     * @returns {boolean} - True if the user is logged in, false otherwise
+     */
     async verifyLogin(req) {
         // Setup the AdminController and use a dummy request
         const AdminController = require('./adminController.js');
@@ -139,6 +170,12 @@ class ReportsController {
         return await AdminController.verifyLogin(req);
     }
 
+    /**
+     * Fetch accounts from the database
+     * @async
+     * @param {string} sql 
+     * @returns {Promise<Array>} - An array of account objects 
+     */
     async fetchAccounts(sql) {
         return new Promise((resolve, reject) => {
             sql.fetchNumeric(
@@ -151,6 +188,13 @@ class ReportsController {
         });
     }
 
+    /**
+     * Fetch characters from the database
+     * @async
+     * @param {string} sql - The SQL connection string
+     * @param {number} accountId - The account ID
+     * @returns 
+     */
     async fetchCharacters(sql, accountId) {
         return new Promise((resolve, reject) => {
             sql.fetchNumeric(`
@@ -164,6 +208,14 @@ class ReportsController {
         });
     }
 
+    /**
+     * Fetch results from the database
+     * @async
+     * @param {string} sql - The SQL connection string 
+     * @param {string} query - The SQL query
+     * @param {Array[]} params - The query parameters
+     * @returns 
+     */
     async fetchResults(sql, query, params) {
         return new Promise((resolve, reject) => {
             sql.fetchAssoc(query, params, (err, rows) => {
@@ -173,7 +225,11 @@ class ReportsController {
         });
     }
 
-    /** Helper function to transpose results */
+    /**
+     * Helper function to transpose results
+     * @param {Array} assocArray - The associative array to transpose
+     * @returns {Array} - The transposed array
+     */
     transpose(assocArray) {
         if (assocArray.length === 0) return [];
 
@@ -195,7 +251,13 @@ class ReportsController {
         return transposed;
     }
 
-    // Helper function to query the database
+    /**
+     * Helper function to query the database
+     * @async
+     * @param {string} query - The SQL query
+     * @param {Array[]} params - The query parameters
+     * @returns {Promise<Array>} - The query results
+     */
     async queryDatabase(query, params = []) {
         return new Promise((resolve, reject) => {
             sql.query(process.env.DB_CONNECTION, query, params, (err, results) => {

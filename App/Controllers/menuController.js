@@ -1,8 +1,15 @@
 const CoHStats = require('../Model/CoHStats.js');
 const MenuItem = require('../Model/MenuItem.js');
-const Maps = require('../Model/maps.js'); // Ensure this file exists with the required structure
+const Maps = require('../Model/maps.js');
 
+/**
+ * MenuControler class for managing the menu items and generating the menu data.
+ */
 class MenuController {
+    /**
+     * Constructor for MenuController.
+     * @param {string} username 
+     */
     constructor(username) {
         this.menu = [];
         this.account = username;
@@ -38,10 +45,19 @@ class MenuController {
         }
     }
 
+    /**
+     * Checks if an account is set.
+     * @returns {boolean} True if an account is set, false otherwise.
+     */
     isAccountSet() {
         return !!this.account;
     }
 
+    /**
+     * Checks if the current account is an admin.
+     * @returns {Promise<boolean>} True if the account is an admin, false otherwise.
+     * @async
+     */
     async isAdmin() {
         // Setup the AdminController and use a dummy request
         const AdminController = require('./adminController');
@@ -49,6 +65,12 @@ class MenuController {
         return await AdminController.verifyLogin(req);
     }
 
+    /**
+     * Gets the menu data.
+     * @returns {Object} The menu data.
+     * @async
+     * @param {*} callback The callback function to call with the menu data.
+     */
     getMenu(callback) {
         const gameStats = new CoHStats();
         const result = this.menu.map(item => item.getMenu());

@@ -1,6 +1,9 @@
 const { render } = require('pug');
 const GameAccount = require('../Model/gameAccount.js');
 
+/**
+ * GameAccountController class for handling account-related operations.
+ */
 class GameAccountController {
     /**
      * Create a new account.
@@ -25,7 +28,12 @@ class GameAccountController {
         }
     }
 
-    // Log in an account
+    /**
+     * Log in an account
+     * @param {*} req The request object
+     * @param {*} res The response object
+     * @returns 
+     */
     async login(req, res) {
         if (req.session.account) {
             return res.redirect(req.session.nextpage || '/');
@@ -54,7 +62,11 @@ class GameAccountController {
         }
     }
 
-    // Log out and destroy session
+    /**
+     * Logs out the account and returns user to the home page.
+     * @param {*} req The request object
+     * @param {*} res The response object
+     */
     logout(req, res) {
         req.session.destroy(err => {
             if (err) {
@@ -65,7 +77,12 @@ class GameAccountController {
         });
     }
 
-    // Change password
+    /**
+     * Change the password for the logged in account.
+     * @param {*} req The request object
+     * @param {*} res The response object
+     * @returns a redirect if not logged in, or a rendered page if successful or failed.
+     */
     async changePassword(req, res) {
         if (!req.session.account) {
             req.session.nextpage = 'manage';

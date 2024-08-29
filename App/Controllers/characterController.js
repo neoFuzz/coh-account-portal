@@ -3,9 +3,14 @@ const Vars = require('../Util/Vars');
 const axios = require('axios');
 const https = require('https');
 
-// Create an HTTPS agent that ignores self-signed certificate errors
+/** Create an HTTPS agent that ignores self-signed certificate errors */
 const agent = new https.Agent({ rejectUnauthorized: false });
 
+/**
+ * @class CharacterController
+ * @description This class contains methods for handling character-related operations.
+ * @note under development
+ */
 class CharacterController {
   /**
    * This looks like it is meant to accept encrypted JSON from a source and display it.

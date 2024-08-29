@@ -2,12 +2,26 @@ const SqlServer = require('../Util/SqlServer');
 const CoHStats = require('../Model/CoHStats');
 const net = require('net');
 
+/**
+ * SunriseController class for handling Sunrise Launcher related requests, like manifest.xml.
+ */
 class SunriseController {
+    /**
+     * Constructor for SunriseController
+     *
+     * @param {*} container Not used 
+     */
     constructor(container) {
         this.container = container;
         this.sql = new SqlServer(process.env.DB_CONNECTION);
     }
 
+    /**
+     * Returns the Sunrise Launcher manifest.xml
+     *
+     * @param {*} req - The request object
+     * @param {*} res - The response object
+     */
     async manifest(req, res) {
         res.setHeader('Content-Type', 'text/xml');
 
@@ -19,6 +33,12 @@ class SunriseController {
         });
     }
 
+    /**
+     * Returns the Sunrise Launcher uptime.xml
+     *
+     * @param {*} req - The request object
+     * @param {*} res - The response object
+     */
     async uptime(req, res) {
         res.setHeader('Content-Type', 'text/xml');
         const zuluTime = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'); // Equivalent to '%Y-%m-%dT%H:%M:%SZ'

@@ -5,6 +5,11 @@ const Http = require('../util/Http');
 const DBFlag = require('../Bitfield/DBFlag');
 const DataHandling = require('../Util/dataHandling');
 
+/**
+ * Federation Controller for handling character transfer requests between hosts.
+ *
+ * @class FederationController
+ */
 class FederationController {
     /**
      * Create a character transfer request.
@@ -39,7 +44,7 @@ class FederationController {
                     message: 'This character is locked for transfer. If this is in error, please contact a GM.'
                 });
             }
-            const sanitisedName = DataHandling.basicSanitize(req.body.server); 
+            const sanitisedName = DataHandling.basicSanitize(req.body.server);
             const fedServer = this.findFederationServerByName(sanitisedName);
             const myUsername = req.session.account.getUsername();
             const myPassword = req.session.account.getPassword();
@@ -111,6 +116,24 @@ class FederationController {
         });
     }
 
+    /**
+     * Handles the transfer of a character from a federation server to the local database.
+     * 
+     * This method performs the following actions:
+     * 1. Validates the session.
+     * 2. Fetches raw character data from a federation server.
+     * 3. Applies policies defined by the federation server.
+     * 4. Checks for existing characters in the local database and updates flags if necessary.
+     * 5. Completes the character transfer process, including deleting the character from the remote server if required.
+     * 6. Saves the character to the local database and logs the success.
+     * 
+     * @async
+     * @function
+     * @param {Object} req - The request object.
+     * @param {Object} res - The response object.
+     * @throws {Error} Throws an error if the session is invalid, the character transfer fails, or any other operation encounters an issue.
+     * @returns {Promise<void>} Returns a rendered response page indicating the result of the transfer.
+     */
     async pullCharacter(req, res) {
         const connectionString = process.env.DB_CONNECTION;
 
@@ -203,6 +226,12 @@ class FederationController {
         }
     }
 
+    /**
+     * Clears the transfer lock on a character.
+     * @param {*} req The request object.
+     * @param {*} res The response object.
+     * @returns Returns a success or error message based on the clear transfer status.
+     */
     async clearTransfer(req, res) {
         const connectionString = process.env.DB_CONNECTION;
 
@@ -224,6 +253,14 @@ class FederationController {
         }
     }
 
+    /**
+     * Executes a SQL query against the database.
+     * @async
+     * @param {string} connectionString The connection string for the database.
+     * @param {string} query The SQL query to execute.
+     * @param {*} params Parameters for the query. 
+     * @returns 
+     */
     async queryDatabase(connectionString, query, params) {
         return new Promise((resolve, reject) => {
             sql.query(connectionString, query, params, (err, rows) => {
@@ -236,6 +273,12 @@ class FederationController {
         });
     }
 
+    /**
+     * Finds a federation server by its name.
+     * @param {string} name 
+     * @returns {Object} The federation server object.
+     * @throws {Error} Throws an error if the server is not found.
+     */
     findFederationServerByName(name) {
         const federationServers = global.federation;
         if (typeof name !== 'string' || name.length === 0) {

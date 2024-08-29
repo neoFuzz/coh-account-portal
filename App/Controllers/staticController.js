@@ -4,11 +4,25 @@ const Maps = require('../Model/maps');
 const MenuController = require('./menuController.js');
 const DataHandling = require('../Util/dataHandling.js');
 
+/**
+ * StaticController class for handling static pages.
+ */
 class StaticController {
+    /**
+     * Constructor for StaticController
+     *
+     * @param {*} container 
+     */
     constructor(container) {
         this.container = container;
     }
 
+    /**
+     * Build the Home page
+     *
+     * @param {*} req The request object
+     * @param {*} res The response object
+     */
     async home(req, res) {
         const gameStats = new CoHStats();
 
@@ -41,10 +55,22 @@ class StaticController {
         }
     }
 
+    /**
+     * Create an account page
+     *
+     * @param {*} req The request object
+     * @param {*} res The response object
+     */
     async create(req, res) {
         res.render('core/page-create-account');
     }
 
+    /**
+     * Manage account page
+     * 
+     * @param {*} req The request object
+     * @param {*} res The response object
+     */
     async manage(req, res) {
         if (!req?.session?.account) {
             req.session.nextPage = 'manage';
