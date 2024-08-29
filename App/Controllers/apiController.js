@@ -5,15 +5,29 @@ const SqlServer = require('../Util/SqlServer');
 const fs = require('fs');
 const { promisify } = require('util');
 const DataHandling = require('../Util/dataHandling');
+const crypto = require('crypto');
 
-const dbConfig = process.env.DB_CONNECTION;
-
+/**
+ * API Controller
+ * 
+ * @class APIController
+ */
 class APIController {
+    /**
+     * Get a character object from the database and return it as a JSON or plain text.
+     *
+     *
+     * @static
+     * @param {*} req The request object
+     * @param {*} res The response object 
+     */
     static async getCharacter(req, res) {
         try {
-            const characterName = DataHandling.decrypt(req.query.q, process.env.PORTAL_KEY, process.env.PORTAL_IV);
+            const characterName = DataHandling.decrypt(
+                DataHandling.basicSanitize(req.query.q), process.env.PORTAL_KEY, process.env.PORTAL_IV
+            );
+            const sanitisedName = DataHandling.basicSanitize(characterName, 1);
             const character = new Character();
-            const sanitisedName = DataHandling.checkUsername(characterName);
             await character.loadCharacter(sanitisedName);
 
             if (req.query.type === 'json') {
@@ -27,8 +41,19 @@ class APIController {
         }
     }
 
+    /**
+     * Delete a character from the database.
+     *
+     * @static
+     * @param {*} req The request object
+     * @param {*} res The response object
+     */
     static async deleteCharacter(req, res) {
         try {
+            // Function to generate a SHA-256 hash
+            function generateHash(data) {
+                return crypto.createHash('sha256').update(data).digest('hex');
+            }
             const message = new Message();
             message.unserialize(req.body.message);
 
@@ -76,9 +101,12 @@ class APIController {
             const backupDir = path.join(__dirname, '..', 'backups', character.authName);
             await promisify(fs.mkdir)(backupDir, { recursive: true });
 
+            const fileCharName = character.name.replace(/[^a-z0-9]+/g, '-');
+            const characterDataHash = generateHash(characterData);
+
             const backupFile = path.join(
                 backupDir,
-                `${character.name.replace(/[^a-z0-9]+/g, '-')}.${md5(characterData)}.txt`
+                `${fileCharName}.${characterDataHash}.txt`
             );
 
             await promisify(fs.writeFile)(backupFile, characterData);

@@ -11,15 +11,15 @@ class DataHandling {
         }
     }
 
-    static checkUsername(username) {
-        if (!/^[a-zA-Z0-9]+$/.test(username)) {
-            throw new Error('Username must consist of letters and numbers only; no spaces or symbols.');
+    static basicSanitize(text, mode = 0) {
+        if (!/^[a-zA-Z0-9: ]+$/.test(text)) {
+            throw new Error('text must consist of letters, spaces and numbers only; no symbols.');
         }
 
-        if (username.length === 0 || username.length > 14) {
-            throw new Error('Username must be 1-14 characters in length.');
+        if ((text.length === 0 || text.length > 14) && mode === 1) { // for usernames
+            throw new Error('text must be 1-14 characters in length.');
         }
-        return username;
+        return text;
     }
 
     static validatePassword(password) {
@@ -76,14 +76,21 @@ class DataHandling {
     }
 
     static encrypt(text, key, iv) {
-        const cipher = crypto.createCipheriv('aes-256-cbc', DataHandling.getKey(key), DataHandling.getIv(iv));
+        const cipher = crypto.createCipheriv('aes-256-gcm', DataHandling.getKey(key), DataHandling.getIv(iv));
+
+        // Encrypt the text
         let encrypted = cipher.update(text, 'utf8', 'hex');
         encrypted += cipher.final('hex');
-        return encrypted;
+        
+        // Get the authentication tag
+        const authTag = cipher.getAuthTag().toString('hex');
+        
+        // Combine encrypted data and authentication tag
+        return `${encrypted}:${authTag}`;
     }
 
     /**
-     * Decrypts the given text using the AES-256-CBC algorithm.
+     * Decrypts the given text using the AES-256-GCM algorithm.
      *
      * @param {string} text - The encrypted text to be decrypted in hexadecimal format.
      * @param {string} key - The encryption key used for decryption.
@@ -92,24 +99,46 @@ class DataHandling {
      * @static
      */
     static decrypt(text, key, iv) {
-        const decipher = crypto.createDecipheriv('aes-256-cbc', DataHandling.getKey(key), DataHandling.getIv(iv));
-        let decrypted = decipher.update(text, 'hex', 'utf8');
-        decrypted += decipher.final('utf8');
+        // Split the encrypted data to get the encrypted text and authentication tag
+        const [encryptedText, authTag] = text.split(':');
+
+        // Create a decipher instance
+        const decipher = crypto.createDecipheriv('aes-256-gcm', DataHandling.getKey(key), DataHandling.getIv(iv));
+
+        // Set the authentication tag
+        decipher.setAuthTag(Buffer.from(authTag, 'hex'));
+
+        let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+        try {
+            decrypted += decipher.final('utf8');  
+        } catch (error) {
+            global.appLogger.warn("DataHandling.decrypt(): couldn't decipher.final()");
+        } 
         return decrypted;
     }
 
     /**
-     * Decrypts the given encrypted text using the AES-256-CBC algorithm.
+     * Decrypts the given encrypted text using the AES-256-GCM algorithm.
      *
      * @param {string} encryptedText - The encrypted text to be decrypted.
      * @param {string} key - The encryption key in hexadecimal format.
      * @param {string} iv - The initialization vector in hexadecimal format.
      * @returns {string} The decrypted text.
      */
-    static decrypt2(encryptedText, key, iv) {
-        const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key, 'hex'), Buffer.from(iv, 'hex'));
+    static decrypt2(encryptedData, key, iv) {
+        // Split the encrypted data to get the encrypted text and authentication tag
+        const [encryptedText, authTag] = encryptedData.split(':');
+
+        // Create a decipher instance
+        const decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(key, 'hex'), Buffer.from(iv, 'hex'));
+
+        // Set the authentication tag
+        decipher.setAuthTag(Buffer.from(authTag, 'hex'));
+
+        // Decrypt the data
         let decrypted = decipher.update(encryptedText, 'base64', 'utf8');
         decrypted += decipher.final('utf8');
+
         return decrypted;
     }
 

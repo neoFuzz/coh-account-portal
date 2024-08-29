@@ -47,11 +47,11 @@ class Character {
     async checkCharacterInDB(name) {
         const SqlServer = require('../Util/SqlServer.js');
         const db = new SqlServer(process.env.DB_CONNECTION);
-        const sqlStr = `SELECT ContainerId FROM cohdb.dbo.ents WHERE Name = '${name}'`;
+        const sqlStr = `SELECT ContainerId FROM cohdb.dbo.ents WHERE Name = ?`;
 
         let data = false;
         try {
-            const result = await db.query(sqlStr);
+            const result = await db.query(sqlStr,[name]);
             if (result) {
                 data = true;
             }
@@ -82,7 +82,7 @@ class Character {
             }
 
             result = result.trim();
-            const [key, value] = result.split(' ', 2);
+            const [key, value] = result.split(/ (.+)/, 2);
 
             if (key && value) {
                 const cleanValue = value.replace(/"/g, '');
@@ -103,15 +103,28 @@ class Character {
     reconstruct() {
         this.constructed = [];
         for (const [table, attr] of Object.entries(this.attributes)) {
-            if (!Array.isArray(attr)) {
-                this.constructed.push(`${table} "${attr}"`);
-            } else {
+            if (typeof attr === 'object' && !Array.isArray(attr)) {
+                // Handle objects
+                this.processObjects(attr, table);
+            } else if (Array.isArray(attr)) {
+                // Handle arrays
                 for (const [row, fields] of Object.entries(attr)) {
                     for (const [field, value] of Object.entries(fields)) {
+                        // Directly use the value, assuming it's a primitive
                         this.constructed.push(`${table}[${row}].${field} "${value}"`);
                     }
                 }
+            } else {
+                // Handle any other types if necessary
+                this.constructed.push(`${table} "${attr}"`);
             }
+        }
+    }
+
+    processObjects(attr, table) {
+        for (const [key, value] of Object.entries(attr)) {
+            // Serialize the value as a JSON string to handle complex objects
+            this.constructed.push(`${table} "${JSON.stringify({ [key]: value })}"`);
         }
     }
 

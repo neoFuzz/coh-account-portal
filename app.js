@@ -4,6 +4,7 @@ const https = require('https');
 const fs = require('fs');
 const express = require('express');
 const session = require('express-session');
+const csurf = require('@dr.pogodin/csurf');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const winston = require('winston');
@@ -20,7 +21,6 @@ let routes = requireDir('./routes');
 const globalData = require('./App/Middleware/globalData');
 
 let app = express();
-const csurf = require('@dr.pogodin/csurf');
 
 let PORT = process.env.PORT || 3000;
 

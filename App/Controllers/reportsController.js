@@ -9,7 +9,7 @@ class ReportsController {
     }
 
     async listReports(req, res) {
-        if (!this.verifyLogin(req)) {
+        if (!(await this.verifyLogin(req))) {
             res.redirect('/login');
         }
 
@@ -40,7 +40,7 @@ class ReportsController {
 
 
     async report(req, res) {
-        if (!this.verifyLogin(req)) {
+        if (!(await this.verifyLogin(req))) {
             res.redirect('/login');
         }
         

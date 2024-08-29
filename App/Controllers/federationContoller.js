@@ -1,9 +1,9 @@
 const sql = require('msnodesqlv8');
-const { decrypt } = require('../Util/dataHandling');
 const Message = require('../Util/message');
 const Character = require('../Model/character');
 const Http = require('../util/Http');
 const DBFlag = require('../Bitfield/DBFlag');
+const DataHandling = require('../Util/dataHandling');
 
 class FederationController {
     /**
@@ -24,7 +24,7 @@ class FederationController {
             });
         }
 
-        const characterName = decrypt(decodeURIComponent(req.body.character), process.env.PORTAL_KEY, process.env.PORTAL_IV);
+        const characterName = DataHandling.decrypt(decodeURIComponent(req.body.character), process.env.PORTAL_KEY, process.env.PORTAL_IV);
 
         try {
             // Get the character's ContainerId
@@ -39,8 +39,8 @@ class FederationController {
                     message: 'This character is locked for transfer. If this is in error, please contact a GM.'
                 });
             }
-
-            const fedServer = this.findFederationServerByName(req.body.server);
+            const sanitisedName = DataHandling.basicSanitize(req.body.server); 
+            const fedServer = this.findFederationServerByName(sanitisedName);
             const myUsername = req.session.account.getUsername();
             const myPassword = req.session.account.getPassword();
 
@@ -188,7 +188,7 @@ class FederationController {
             }
 
             // Put the character into the database
-            await character.putCharacter();
+            character.putCharacter();
             global.appLogger.info(`${character.Name} has been transferred successfully!`);
             return res.render('core/page-generic-message.pug', {
                 title: `Welcome to ${process.env.PORTAL_NAME}`,
@@ -211,7 +211,7 @@ class FederationController {
                 `UPDATE cohdb.dbo.Ents2 SET AccSvrLock = null
                   FROM cohdb.dbo.Ents INNER JOIN cohdb.dbo.Ents2
                   ON Ents.ContainerId = Ents2.ContainerId WHERE Ents.Name = ?`,
-                [decrypt(decodeURIComponent(req.body.character), process.env.PORTAL_KEY, process.env.PORTAL_IV)]);
+                [DataHandling.decrypt(decodeURIComponent(req.body.character), process.env.PORTAL_KEY, process.env.PORTAL_IV)]);
 
             if (!req.body.skipredirect) {
                 return res.redirect(`${global.httpUrl}manage`);
@@ -220,7 +220,7 @@ class FederationController {
             }
         } catch (error) {
             global.appLogger.error(`federationController clearTransfer: ${error}`);
-            return res.status(500).send(`Error: ${error.message}`);
+            return res.status(500).send(`Error: Couldn't clear Transfer!`);
         }
     }
 
@@ -238,6 +238,9 @@ class FederationController {
 
     findFederationServerByName(name) {
         const federationServers = global.federation;
+        if (typeof name !== 'string' || name.length === 0) {
+            throw new Error('Invalid server name provided.');
+        }
         const server = federationServers.find(item => item.Name.toLowerCase().includes(name.toLowerCase()));
 
         if (!server) {

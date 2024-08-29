@@ -2,6 +2,7 @@ const CoHStats = require('../Model/CoHStats');
 const GameAccount = require('../Model/gameAccount.js');
 const Maps = require('../Model/maps');
 const MenuController = require('./menuController.js');
+const DataHandling = require('../Util/dataHandling.js');
 
 class StaticController {
     constructor(container) {
@@ -81,7 +82,7 @@ class StaticController {
         const page = req.params.page;
 
         try {
-            res.render(`core/${page}`);
+            res.render(`core/${DataHandling.basicSanitize(page)}`);
         } catch (err) {
             global.appLogger.error(`StaticController.page(): ${err}`);
             // Handle 404

@@ -222,7 +222,7 @@ class AdminController {
         const ga = new GameAccount();
         await ga.fetchAccountByUsername(req.session.account.username);
 
-        if (!ga.isAdmin()) {
+        if (!(await ga.isAdmin())) {
             throw new Error('You must be an administrator to access this page.');
         }
     }
