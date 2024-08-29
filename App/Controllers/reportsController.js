@@ -25,7 +25,8 @@ class ReportsController {
      * @param {*} res - The response object
      */
     async listReports(req, res) {
-        if (!(await this.verifyLogin(req))) {
+        let b = await this.verifyLogin(req);
+        if (!b) {
             res.redirect('/login');
         }
 
@@ -66,7 +67,8 @@ class ReportsController {
      * @param {*} res - The response object
      */
     async report(req, res) {
-        if (!(await this.verifyLogin(req))) {
+        let b = await this.verifyLogin(req);
+        if (!b) {
             res.redirect('/login');
         }
 
@@ -166,8 +168,12 @@ class ReportsController {
     async verifyLogin(req) {
         // Setup the AdminController and use a dummy request
         const AdminController = require('./adminController.js');
-
-        return await AdminController.verifyLogin(req);
+        try {
+            await AdminController.verifyLogin(req);
+        } catch (error) {
+            return false;
+        }
+        return true;
     }
 
     /**
