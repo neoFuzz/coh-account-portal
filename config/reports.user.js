@@ -1,9 +1,23 @@
 // config/reports.user.js example
 
-// How to create custom reports for yourself:
-// edit this file
-// Replacement strings: '@ACCOUNT_NAME', '@CHARACTER_NAME', '@ACCOUNT_UID', '@CHARACTER_CID'
-
+/**
+ * How to create custom reports for yourself:
+ * Edit this file by adding a new report object with a unique key (e.g., 'AuditAdmins8').
+ * 
+ * You can get started by copying the template at the end of this file.
+ * 
+ * Each report object should have the following properties:
+ * - description (string): A brief description of the report.
+ * - sql (string): The SQL query to execute for the report.
+ * - transpose (boolean): Whether the report requires transposing the result set.
+ * 
+ * You can use the following placeholders in the SQL query:
+ * - '@ACCOUNT_NAME' will be replaced with the account name.
+ * - '@CHARACTER_NAME' will be replaced with the character name.
+ * - '@ACCOUNT_UID' will be replaced with the account UID.
+ * - '@CHARACTER_CID' will be replaced with the character CID.
+ * 
+ */
 const reports = {
     'AuditAdmins8': {
         description: '[Custom] Super Administrative characters audit.',

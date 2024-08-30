@@ -149,15 +149,8 @@ class AdminController {
 
         const query = `
             SELECT
-                ContainerId,
-                Name,
-                StaticMapId,
-                Level,
-                ExperiencePoints,
-                InfluencePoints,
-                CONVERT(VARCHAR, LastActive, 101) as LastActive,
-                AccessLevel,
-                NULL as button
+                ContainerId, Name, StaticMapId, Level, ExperiencePoints, InfluencePoints,
+                CONVERT(VARCHAR, LastActive, 101) as LastActive, AccessLevel, NULL as button
             FROM cohdb.dbo.ents
             WHERE AuthId = ?
         `;

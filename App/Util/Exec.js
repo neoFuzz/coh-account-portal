@@ -1,5 +1,12 @@
 const { exec } = require('child_process');
 
+/**
+ * @class Exec
+ * @description Execute commands and return their output
+ *
+ * @example
+ * const exec = new Exec();
+ */
 class Exec {
     /**
      * Execute a command and return its output. Either wait until the command exits or the timeout has expired.

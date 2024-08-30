@@ -1,8 +1,16 @@
+/**
+ * Static maps class to store and retrieve map IDs and their corresponding names.
+ * 
+ * @class Maps
+ * @property {Object} ID - An object that stores map IDs as keys and map names as values.
+ */
 class Maps {
     // Define a static property
     static ID = {};
 
-    // Define a static method to populate the ID property
+    /**
+     * A static method to populate the ID property with the Map name to ID.
+     */
     static generate() {
         Maps.ID[1] = 'Atlas Park';
         Maps.ID[101] = 'Atlas Park 2';

@@ -1,5 +1,8 @@
 const winston = require('winston');
 
+/**
+ * Simple Logger wrapper for winston.
+ */
 class MonoLogger {
     static logger = null;
 

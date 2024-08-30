@@ -4,7 +4,8 @@ const axios = require('axios');
 const https = require('https');
 
 /** Create an HTTPS agent that ignores self-signed certificate errors */
-const agent = new https.Agent({ rejectUnauthorized: false });
+const weakSsl = process.env.portal_error_reporting !== 'dev';
+const agent = new https.Agent({ rejectUnauthorized: weakSsl });
 
 /**
  * @class CharacterController

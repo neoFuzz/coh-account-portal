@@ -19,7 +19,7 @@ class ReportsController {
     }
 
     /**
-     * List reports
+     * Get a list of the reports available.
      *
      * @param {*} req - The request object
      * @param {*} res - The response object

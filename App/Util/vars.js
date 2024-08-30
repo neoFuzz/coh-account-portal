@@ -1,7 +1,20 @@
 const fs = require('fs');
 const path = require('path');
 
+
+/**
+ * A class for managing and querying a dataset of variables.
+ * 
+ * @property {Array<string>} ouroboros - An array of lowercase variable names.
+ * @class
+ */
 class Vars {
+  /**
+   * Creates an instance of Vars by loading data from a specified dataset.
+   * 
+   * @param {string} dataset - The name of the dataset directory to load.
+   * @throws {Error} Throws an error if the dataset file cannot be read.
+   */
   constructor(dataset) {
     this.ouroboros = [];
 
@@ -22,6 +35,12 @@ class Vars {
     }
   }
 
+  /**
+   * Checks if a specific variable exists in the dataset.
+   * 
+   * @param {string} needle - The variable to check for existence.
+   * @returns {boolean} True if the variable exists, false otherwise.
+   */
   exists(needle) {
     return this.ouroboros.includes(needle.toLowerCase());
   }

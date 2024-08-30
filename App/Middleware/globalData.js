@@ -1,3 +1,21 @@
+/**
+ * Middleware function to populate global data for rendering.
+ * 
+ * This middleware performs the following actions:
+ * 1. Initializes instances of `CoHStats` and `Maps`.
+ * 2. Generates a list of maps.
+ * 3. Fetches game statistics, including account count, character count, server status, and online status.
+ * 4. Retrieves and sets the menu tree based on the current session's account.
+ * 5. Populates `res.locals.globalData` with various pieces of information for use in rendering.
+ * 
+ * @async
+ * @function
+ * @param {Object} req - The request object.
+ * @param {Object} res - The response object.
+ * @param {Function} next - The next middleware function in the stack.
+ * @throws {Error} Throws an error if fetching data or setting `res.locals.globalData` fails.
+ * @returns {Promise<void>} Calls `next()` to pass control to the next middleware function.
+ */
 
 module.exports = async (req, res, next) => {
     const CoHStats = require('../Model/CoHStats');

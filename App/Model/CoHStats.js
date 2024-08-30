@@ -2,6 +2,12 @@ const { execSync } = require('child_process');
 const axios = require('axios');
 const SqlServer = require('../Util/SqlServer.js');
 
+/**
+ * Formats time in seconds to a string in the format HH:MM:SS.
+ * @param {*} t - The time in seconds.
+ * @returns {string} The formatted time string.
+ * @param {string} [f=':'] - The separator string for the time components.
+ */
 function formatTime(t, f = ':') {
   const hours = Math.floor(t / 3600);
   const minutes = Math.floor((t % 3600) / 60);
@@ -9,11 +15,25 @@ function formatTime(t, f = ':') {
   return `${String(hours).padStart(2, '0')}${f}${String(minutes).padStart(2, '0')}${f}${String(seconds).padStart(2, '0')}`;
 }
 
+/**
+ * Class representing a collection of operations related to server statistics and player counts.
+ */
 class CoHStats {
+  /**
+   * Creates an instance of CoHStats.
+   */
   constructor() {
+    /**
+     * Database connection pool.
+     * @type {SqlServer}
+     */
     this.pool = new SqlServer(process.env.DB_CONNECTION);
   }
 
+  /**
+   * Counts the number of user accounts in the database.
+   * @returns {Promise<number>} The count of user accounts, or -1 if an error occurs.
+   */
   async countAccounts() {
     try {
       const rows = await this.pool.query('SELECT count(*) as count FROM cohauth.dbo.user_account');
@@ -24,6 +44,10 @@ class CoHStats {
     }
   }
 
+  /**
+   * Counts the number of characters in the database.
+   * @returns {Promise<number>} The count of characters, or -1 if an error occurs.
+   */
   async countCharacters() {
     try {
       const rows = await this.pool.query('SELECT count(*) as count FROM cohdb.dbo.ents');
@@ -34,6 +58,11 @@ class CoHStats {
     }
   }
 
+  /**
+   * Retrieves the list of online players and their count.
+   * @returns {Promise<{Count: number, List: Array<{Name: string, StaticMapId: number, AccessLevel: number, LfgFlags: number, MapName: string}>}>} 
+   * An object containing the count of online players and a list of their details, or an object with Count as 0 and List as an empty array if an error occurs.
+   */
   async getOnline() {
     try {
       const rows = await this.pool.query(
@@ -65,6 +94,11 @@ class CoHStats {
     }
   }
 
+  /**
+   * Retrieves the server status by querying the server API or executing a database query command.
+   * @returns {Promise<{status: string, started?: string, uptime?: string}>} 
+   * An object indicating the server status. If online, includes the start time and uptime. If offline or an error occurs, returns the appropriate status message.
+   */
   async getServerStatus() {
     if (process.env.SERVERAPI && process.env.SHARDNAME) {
       try {

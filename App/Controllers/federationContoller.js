@@ -49,7 +49,7 @@ class FederationController {
             const myUsername = req.session.account.getUsername();
             const myPassword = req.session.account.getPassword();
 
-            const login = new Message(req.body.server);
+            const login = new Message(sanitisedName);
             login.username = myUsername;
             login.password = myPassword;
             login.action = 'PullCharacter';
@@ -275,19 +275,21 @@ class FederationController {
 
     /**
      * Finds a federation server by its name.
-     * @param {string} name 
+     * @param {string} name The name of the server to find.
      * @returns {Object} The federation server object.
      * @throws {Error} Throws an error if the server is not found.
      */
     findFederationServerByName(name) {
-        const federationServers = global.federation;
-        if (typeof name !== 'string' || name.length === 0) {
+        if (typeof name !== 'string' || name.trim().length === 0) {
             throw new Error('Invalid server name provided.');
         }
+        const federationServers = global.federation;
         const server = federationServers.find(item => item.Name.toLowerCase().includes(name.toLowerCase()));
 
         if (!server) {
-            throw new Error(`Unable to locate federated server by name: ${name}. Please ensure the configuration has an entry for ${name}.`);
+            global.appLogger.error(`Unable to locate federated server by name: ${name}. Please check the configuration has an entry for it.`);
+            throw new Error(`Unable to locate federated server by name. Please ensure the configuration has the correct entry.`);
+            
         }
 
         return server;

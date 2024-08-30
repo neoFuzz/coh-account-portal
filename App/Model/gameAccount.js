@@ -2,6 +2,15 @@ const sql = require('msnodesqlv8');
 const DataHandling = require('../Util/dataHandling.js');
 const { promisify } = require('util');
 
+/**
+ * Class representing a game account with operations related to account management and character information.
+ * 
+ * @property {string|null} username   The username of the account.
+ * @property {number|null} uid        The unique identifier of the account.
+ * @property {string|null} lastIp     The last IP address used by the account.
+ * @property {Date|null}   lastLogin  The last login date of the account.
+ * @property {Date|null}   lastLogout The last logout date of the account.
+ */
 class GameAccount {
     /**
      * Constructor for the GameAccount class.
@@ -24,6 +33,13 @@ class GameAccount {
         }
     }
 
+    /**
+     * Executes a SQL query with parameters.
+     * 
+     * @param {string} query The SQL query to execute.
+     * @param {Array} [params=[]] The parameters for the SQL query.
+     * @returns {Promise<Array>} The result rows from the SQL query.
+     */
     executeQuery(query, params = []) {
         let logger = global.appLogger;
         return new Promise((resolve, reject) => {
@@ -37,6 +53,12 @@ class GameAccount {
         });
     }
 
+    /**
+    * Fetches account details by UID.
+    * 
+    * @param {number} uid The UID of the account to fetch.
+    * @throws {Error} If an error occurs during the database operation.
+    */
     async fetchAccountByUid(uid) {
         let rows;
         try {
@@ -59,6 +81,12 @@ class GameAccount {
         }
     }
 
+    /**
+     * Fetches account details by username.
+     * 
+     * @param {string} username The username of the account to fetch.
+     * @throws {Error} If an error occurs during the database operation.
+     */
     async fetchAccountByUsername(username) {
         let rows;
         try {
@@ -81,6 +109,13 @@ class GameAccount {
         }
     }
 
+    /**
+     * Creates a new game account with the given username and password.
+     * 
+     * @param {string} username The username for the new account.
+     * @param {string} password The password for the new account.
+     * @throws {Error} If an error occurs during the account creation process.
+     */
     async create(username, password) {
         let logger = global.appLogger;
         DataHandling.validateUsername(username);
@@ -143,6 +178,12 @@ class GameAccount {
         }
     }
 
+    /**
+     * Logs in a user with the provided username and password.
+     * 
+     * @param {string} username The username of the account.
+     * @param {string} password The password of the account.
+     */
     async login(username, password) {
         try {
             DataHandling.validateUsername(username);
@@ -173,6 +214,12 @@ class GameAccount {
         }
     }
 
+    /**
+     * Changes the password for the current account.
+     * 
+     * @param {string} newPassword The new password for the account.
+     * @throws {Error} If an error occurs during the password change process.
+     */
     async changePassword(newPassword) {
         try {
             DataHandling.validatePassword(newPassword);
@@ -186,6 +233,12 @@ class GameAccount {
         }
     }
 
+    /**
+     * Retrieves the list of characters associated with the current account.
+     * 
+     * @throws {Error} If an error occurs during the character retrieval process.
+     * @returns {Array} An array of character objects containing character details.
+     */
     async getCharacterList() {
         try {
             const rows = await this.executeQuery(
@@ -201,6 +254,11 @@ class GameAccount {
         }
     }
 
+    /**
+    * Retrieves the list of locked characters associated with the current account.
+    * 
+    * @returns {Array} The list of locked characters for the account.
+    */
     async getLockedCharacters() {
         try {
             const rows = await this.executeQuery(
@@ -216,10 +274,20 @@ class GameAccount {
         }
     }
 
-    async getUsername() {
+    /**
+     * Retrieves the username for the current account.
+     * 
+     * @returns {string} The username of the account.
+     */
+    getUsername() {
         return this.username;
     }
 
+    /**
+    * Retrieves the hashed password for the current account.
+    * 
+    * @returns {string|undefined} The hashed password, or undefined if not found.
+    */
     async getPassword() {
         const rows = await this.executeQuery(
             'SELECT CONVERT(VARCHAR, password) AS pass FROM cohauth.dbo.user_auth WHERE UPPER(account) = UPPER(?)',
@@ -228,6 +296,12 @@ class GameAccount {
         return rows[0]?.pass;
     }
 
+    /**
+     * Verifies if the given hashed password matches the stored password for the current account.
+     * 
+     * @param {string} hashedPassword The hashed password to verify.
+     * @returns {boolean} True if the hashed password matches, false otherwise.
+     */
     async verifyHashedPassword(hashedPassword) {
         const rows = await this.executeQuery(
             'SELECT 1 FROM cohauth.dbo.user_auth WHERE UPPER(account) = UPPER(?) AND CONVERT(VARCHAR, password) = ?',
@@ -236,10 +310,20 @@ class GameAccount {
         return rows.length > 0;
     }
 
-    async getUID() {
+    /**
+     * Retrieves the UID for the current account.
+     * 
+     * @returns {Promise<number|null>} The UID of the account, or null if not set.
+     */
+    getUID() {
         return this.uid;
     }
 
+    /**
+    * Checks if the current account is online.
+    * 
+    * @returns {boolean} True if the account is online, false otherwise.
+    */
     async isOnline() {
         const rows = await this.executeQuery(
             'SELECT 1 FROM cohdb.dbo.Ents WHERE AuthId = ? AND Active > 0',
@@ -248,6 +332,11 @@ class GameAccount {
         return rows.length > 0;
     }
 
+    /**
+    * Checks if the current account has admin privileges.
+    * 
+    * @returns {boolean} True if the account is an admin, false otherwise.
+    */
     async isAdmin() {
         const rows = await this.executeQuery(
             'SELECT 1 FROM cohdb.dbo.Ents WHERE AuthId = ? AND AccessLevel >= 10',
@@ -266,7 +355,9 @@ class GameAccount {
     async banAccount(date) {
         try {
             if (date === null || date === undefined || date === '') {
-                date = new Date().toISOString().slice(0, 19).replace('T', ' ');
+                // 100 year ban
+                date = new Date(new Date().setFullYear(new Date().getFullYear() + 100))
+                    .toISOString().slice(0, 19).replace('T', ' ');
             } else {
                 date = new Date(date).toISOString().slice(0, 19).replace('T', ' ');
             }
@@ -275,7 +366,7 @@ class GameAccount {
                 'UPDATE cohauth.dbo.user_account SET block_end_date = ? WHERE UPPER(account) = UPPER(?)',
                 [date, this.username]
             );
-            
+
             await this.executeQuery(
                 'UPDATE cohauth.dbo.user_account SET block_flag = 1 WHERE UPPER(account) = UPPER(?)',
                 [this.username]

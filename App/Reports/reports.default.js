@@ -1,9 +1,10 @@
 // App/Reports/reports.default.js
 
-// How to create custom reports for yourself:
-// Make a file called 'reports.user.js' with entries similar to what's below.
-// Replacement strings: '@ACCOUNT_NAME', '@CHARACTER_NAME', '@ACCOUNT_UID', '@CHARACTER_CID'
-
+/**
+ * How to create custom reports for yourself:
+ * Make a file called 'reports.user.js' with entries similar to what's below.
+ * Replacement strings: '@ACCOUNT_NAME', '@CHARACTER_NAME', '@ACCOUNT_UID', '@CHARACTER_CID'
+ */
 const reports = {
     'CharacterSalvage': {
         description: 'Display all salvage a character possesses in their inventory and storage; does not include auction house or game mails.',

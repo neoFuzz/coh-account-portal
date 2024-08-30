@@ -1,42 +1,40 @@
 {
-  "name": "account-portal",
-  "version": "2.0.0",
-  "private": true,
-  "scripts": {
-    "start": "node app"
-  },
-  "description": "OuroDev Account Portal for CoH gme servers",
-  "author": {
-    "name": "fuzz_c"
-  },
-  "dependencies": {
-    "@dr.pogodin/csurf": "^1.13.0",
-    "account-portal": "file:",
-    "axios": "^1.7.4",
-    "better-sqlite3": "^11.1.2",
-    "child_process": "^1.0.2",
-    "connect-redis": "^7.1.1",
-    "connect-sqlite3": ">0.9.14",
-    "cookie-parser": "^1.4.0",
-    "debug": "^2.2.0",
-    "dotenv": "^16.4.5",
-    "express": "^4.14.0",
-    "express-rate-limit": "^7.4.0",
-    "express-session": "^1.18.0",
-    "fs": "^0.0.1-security",
-    "helmet": "^7.1.0",
-    "jquery": "^3.7.1",
-    "moment-js": "^1.1.15",
-    "msnodesqlv8": "^4.2.1",
-    "path": "^0.12.7",
-    "pug": "^3.0.3",
-    "redis": "^4.7.0",
-    "require-dir": "^1.2.0",
-    "serve-favicon": "^2.3.0",
-    "winston": "^3.14.2"
-  },
-  "devDependencies": {
-    "eslint": "^8.21.0"
-  },
-  "eslintConfig": {}
+	"name": "account-portal",
+	"version": "2.0.0",
+	"private": true,
+	"scripts": {
+		"start": "node app"
+	},
+	"description": "OuroDev Account Portal for CoH gme servers",
+	"author": {
+		"name": "fuzz_c"
+	},
+	"dependencies": {
+		"@dr.pogodin/csurf": "^1.13.0",
+		"account-portal": "file:",
+		"axios": "^1.7.4",
+		"better-sqlite3": "^11.1.2",
+		"child_process": "^1.0.2",
+		"connect-redis": "^7.1.1",
+		"connect-sqlite3": ">0.9.14",
+		"cookie-parser": "^1.4.0",
+		"debug": "^2.2.0",
+		"dotenv": "^16.4.5",
+		"express": "^4.14.0",
+		"express-rate-limit": "^7.4.0",
+		"express-session": "^1.18.0",
+		"fs": "^0.0.1-security",
+		"helmet": "^7.1.0",
+		"msnodesqlv8": "^4.2.1",
+		"path": "^0.12.7",
+		"pug": "^3.0.3",
+		"redis": "^4.7.0",
+		"require-dir": "^1.2.0",
+		"serve-favicon": "^2.3.0",
+		"winston": "^3.14.2"
+	},
+	"devDependencies": {
+		"eslint": "^8.21.0"
+	},
+	"eslintConfig": {}
 }
