@@ -23,6 +23,7 @@ class CharacterController {
    * @returns 
    */
   static async dev(req, res) {
+    if (process.env.portal_error_reporting !== 'prod') { return res.status(400).send('Not in production'); }
     try {
       const { q } = req.query;
       const portalKey = process.env.PORTAL_KEY;
