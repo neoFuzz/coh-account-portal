@@ -154,6 +154,9 @@ app.use((req, res, next) => {
 // Setup SQL Server wrapper module
 //global.sqlServer = new (require('./App/Util/SqlServer'))(process.env.DB_CONNECTION);
 
+const DBQuery = require('./App/Util/dbquery');
+DBQuery.communicate();
+
 // Create a rate limiter middleware with specific options
 appLogger.info('Setting up rate limiter...');
 const globalRateLimiter = rateLimit({
