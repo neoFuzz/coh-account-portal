@@ -1,12 +1,6 @@
 const net = require('net');
 const fs = require('fs');
 
-// Define the end marker (as a string or hexadecimal)
-const endMarker = '☻�∟☻�∟☻�∟';
-
-// Convert end marker to Buffer
-const endMarkerBuffer = Buffer.from(endMarker, 'utf8');
-
 /** Sent to DB to open comms. len: 36
                                  /------\                                  /------\              */
 const INITIATE_CONN = '0xf9000000a3740ccef7030800000060c0a05f080c61f8ffffffaba4938c313c0000cdcdcd';
@@ -32,121 +26,13 @@ const CONT_REQ = '0xd2010000b39d1216f7033000000060c0b0fd000e000000182c58d0bf0c0c
 //                          |------|                                                                                    |--|            |--|
 const CHAR_REQ = '0xd2010000af3211a4f7033000000060c0b0fd000e000000182c58d0bf0c0ca7fd0008000000f6031800000060f8ffffff7fa51b023094e1cc10860100';
 
+/**
+ * Class to handle DBQuery requests to the CoH DBServer
+ */
 class DBQuery {
     /**
-     * Function to handle the communication
+     * Function to handle the communication with DBServer
      */
-    static communicate2() {
-        let PACKET_SIZE = 20;
-        // Create a client socket for port 6997
-        const client = new net.Socket();
-        let charOutput = '';
-
-        // Connect to the server on port 6997
-        client.connect(6997, '127.0.0.1', () => {
-            console.log('Connected to server on port 6997');
-
-            // send initiate comms packet
-            const packet = DBQuery.hexToBuffer(INITIATE_CONN);
-            client.write(packet);
-            console.log(`Sent initialise connection!`);
-        });
-
-        // Buffer to handle incoming data
-        let buffer = Buffer.alloc(0);
-        let readyforChar = false;
-
-        client.on('data', (data) => {
-            // Append new data to the buffer
-            buffer = Buffer.concat([buffer, data]);
-            let packet;
-            // Process incoming packets
-            while (buffer.length > 0) {
-                if (buffer.length >= PACKET_SIZE && !readyforChar) {
-                    packet = buffer.slice(0, PACKET_SIZE);
-                    buffer = buffer.slice(PACKET_SIZE);
-                    //console.log(`Received packet: ${packet.toString('hex')} : ${packet.toString()}`);
-                } else if (buffer.length >= PACKET_SIZE) {
-                    packet = buffer.slice(0, PACKET_SIZE);
-                    buffer = buffer.slice(PACKET_SIZE);
-                    //console.log(`Received packet...`);
-                } else {
-                    // Wait for more data to form a complete packet
-                    break;
-                }
-
-                packet = buffer.slice(0, PACKET_SIZE);
-                if (!readyforChar) {
-                    if (packet.toString('hex') === DB_ACK.substring(2)) {
-                        console.log(`Received DB_ACK: ${packet.toString('hex')} : ${packet.toString()}`);
-                        let responseBuffer = DBQuery.hexToBuffer(CL_RES);
-                        client.write(responseBuffer);
-                        console.log(`***** Sent CL_RES!`);
-                        PACKET_SIZE = 20;
-                    }
-                    if (packet.toString('hex') === DB_READY.substring(2)) {
-                        console.log(`Received DB_ACK: ${packet.toString('hex')} : ${packet.toString()}`);
-                        let responseBuffer = DBQuery.hexToBuffer(READY_ACK);
-                        client.write(responseBuffer);
-                        console.log(`***** Sent READY_ACK!`);
-                        PACKET_SIZE = 36;
-                    }
-
-                    if (buffer.length > 36) {
-                        // Prepare a new response packet
-                        let responseBuffer = DBQuery.hexToBuffer(CONT_REQ);
-
-                        // Send the new packet
-                        client.write(responseBuffer);
-                        //console.log(`Sent response: ${responseBuffer.toString('hex')} : ${responseBuffer.toString()}`);
-
-                        console.log(`***** Sent for Char data!`);
-                        PACKET_SIZE = 1200;
-                        readyforChar = true;
-                    }
-                }
-
-                if (readyforChar) { /* buffer.length > 1250  */
-                    const str = buffer.toString();
-                    charOutput += str;
-                    console.log(`> ${str} <<<<EOP`);
-                    //PACKET_SIZE = 20;
-                    if (buffer.toString('hex').startsWith("90000000")) {
-                        console.log("**** end packet found");
-                        PACKET_SIZE = 20;
-                    }
-                }
-                // Check if the end marker is in the buffer
-                if (DBQuery.containsEndMarker(buffer)) {
-                    // Extract data up to the end marker
-                    const markerIndex = buffer.indexOf(endMarkerBuffer);
-                    const dataUpToMarker = buffer.slice(0, markerIndex + endMarkerBuffer.length);
-
-                    console.log('Received data up to end marker:', dataUpToMarker.toString('utf8'));
-
-                    // Optionally remove the data up to and including the end marker
-                    buffer = buffer.slice(markerIndex + endMarkerBuffer.length);
-
-                    buffer = Buffer.alloc(0);
-                    readyforChar = false;
-                    //client.destroy();
-                    console.log(`***** Char data:\n${charOutput}`);
-
-                    // Process or handle the dataUpToMarker as needed
-                    break;
-                }
-            }
-        });
-
-        client.on('error', (err) => {
-            console.error(`Error: ${err.message}`);
-        });
-
-        client.on('close', () => {
-            console.log('Connection closed');
-        });
-    }
-
     static communicate() {
         let PACKET_SIZE = 20;
         const client = new net.Socket();
@@ -154,14 +40,14 @@ class DBQuery {
         let buffer = Buffer.alloc(0);
         let readyforChar = false;
         let firstPacket = false;
-        const endMarkerHex = '0x7330315b305d2e6331373633';//'0x0200b01c0200b01c0200b01c0200b01c'; '0x7330315b305d2e633137363320320a00'
+        const endMarkerHex = '0x0200b01c0200b01c'; // potential end markers '0x0200b01c0200b01c0200b01c0200b01c'; '0x7330315b305d2e633137363320320a00'
         const endMarkerBuffer = this.hexToBuffer(endMarkerHex);
 
-        client.connect(6997, '127.0.0.1', () => {
-            console.log('Connected to server on port 6997');
+        client.connect(6997, process.env.DBSERVER, () => {
+            global.appLogger.info('DBQuery: Connected on port 6997');
             const packet = DBQuery.hexToBuffer(INITIATE_CONN);
             client.write(packet);
-            console.log('Sent initialise connection!');
+            global.appLogger.debug('DBQuery: Sent initialise packet!');
         });
 
         client.on('data', (data) => {
@@ -169,58 +55,36 @@ class DBQuery {
 
             if (readyforChar) {
 
-                // Process data in chunks of up to 1252 bytes
+                // Process data in chunks of 1200 bytes or larger. The buffer ends up full at some point.
                 while (buffer.length >= 1200) {
                     // Extract a packet of size 1252 bytes
                     PACKET_SIZE = 1252;
-                    const packet = firstPacket ? buffer.slice(0, PACKET_SIZE) : buffer.slice(0, 1488); //after the first packet: buffer.slice(0,1247)
-
-                    // Log the size of the received packet
-                    console.log(`Received packet of size: ${packet.length}`);
+                    const packet = firstPacket ? buffer.slice(0, PACKET_SIZE) : buffer.slice(0, 1488);
                     let str = packet.toString()
-
-                    let index = DBQuery.findHexSequenceAtEnd(str, "73325b00");
-                    if (index === -1) { index = DBQuery.findHexSequenceAtEnd(str, '003631'); }
-                    if (index === -1) { index = DBQuery.findHexSequenceAtEnd(str, '00325b00'); }
-                    if (index === -1) { index = DBQuery.findHexSequenceAtEnd(str, '005b00'); }
-
-                    if (str.includes("AuthId")) {
-                        str = str.substring(str.indexOf("AuthId")).slice(0, -1);
-                        // Update the buffer to remove the processed packet
-                        buffer = buffer.slice(1488);
-                        firstPacket = true;
-                        charOutput += str;
-                    } else {
-                        buffer = buffer.slice(PACKET_SIZE);
-                        str = str.charCodeAt(str.length - 1) === 0 ? str.slice(18, index) : str.slice(18);
-                        const dblNullIdx = DBQuery.findLastDoubleNullIndex(str);
-                        str = str.substring(dblNullIdx);
-                        str = str.replace(/^\x00+/, '').replace(/\x00+$/, '');
-                        charOutput += str;
-                    }
-
-                    // Add the packet data to charOutput
-                    //charOutput += str; //str.slice(21,-4)
+                    let index = DBQuery.findDataEndings(str);
 
                     // Optionally check if the end marker is found in the remaining buffer
                     let markerIndex = buffer.indexOf(endMarkerBuffer);
-                    if (markerIndex !== -1) {
-                        // Extract data up to but not including the end marker
-                        charOutput += buffer.slice(0, markerIndex).toString();
-                        buffer = buffer.slice(markerIndex + endMarkerBuffer.length);
+
+                    ({ str, buffer, firstPacket, charOutput } = DBQuery.processPacket(str, buffer, firstPacket, charOutput, PACKET_SIZE, index));
+
+                    if (markerIndex !== -1 ) {
+                        // Clean up the garbage data at the end
+                        charOutput = charOutput.slice(0,charOutput.indexOf('\x0a\x00'));
+                        buffer = buffer.slice(markerIndex + endMarkerBuffer.length); // Empties buffer
 
                         // Save charOutput to a file
                         DBQuery.saveToFile('output.txt', charOutput);
 
                         // Close the connection
                         client.destroy();
-                        console.log('Connection closed after receiving end marker.');
+                        global.appLogger.info('DBQuery: Connection closed after receiving end marker.');
                         return;
                     }
                 }
 
                 // If buffer is less than 1252 bytes and no end marker, wait for more data
-                return;
+                //return;
             } else {
                 // Process communication data packets
                 while (buffer.length >= PACKET_SIZE) {
@@ -228,23 +92,23 @@ class DBQuery {
                     buffer = buffer.slice(PACKET_SIZE);
 
                     if (packet.toString('hex') === DB_ACK.substring(2)) {
-                        console.log(`Received DB_ACK: ${packet.toString('hex')} : ${packet.toString()}`);
+                        global.appLogger.debug(`DBQuery: Received DB_ACK`);
                         const responseBuffer = DBQuery.hexToBuffer(CL_RES);
                         client.write(responseBuffer);
-                        console.log('***** Sent CL_RES!');
+                        global.appLogger.debug('DBQuery: Sent CL_RES!');
                         PACKET_SIZE = 20;
                     } else if (packet.toString('hex') === DB_READY.substring(2)) {
-                        console.log(`Received DB_READY: ${packet.toString('hex')} : ${packet.toString()}`);
+                        global.appLogger.debug(`DBQuery: Received DB_READY`);
                         const responseBuffer = DBQuery.hexToBuffer(READY_ACK);
                         client.write(responseBuffer);
-                        console.log('***** Sent READY_ACK!');
+                        global.appLogger.debug('DBQuery: Sent READY_ACK!');
                         PACKET_SIZE = 36;
                     }
 
                     if (buffer.length >= 36) {
                         const responseBuffer = DBQuery.hexToBuffer(CONT_REQ); // TODO: update variable to make it dynamic with the request
                         client.write(responseBuffer);
-                        console.log('***** Sent for Char data!');
+                        global.appLogger.info('DBQuery: Sent for Character data!');
                         PACKET_SIZE = 1252;
                         readyforChar = true;
                     }
@@ -253,12 +117,29 @@ class DBQuery {
         });
 
         client.on('error', (err) => {
-            console.error(`Error: ${err.message}`);
+            global.appLogger.error(`DBQuery: ${err.message}`);
         });
 
         client.on('close', () => {
-            console.log('Connection closed');
+            global.appLogger.info('DBQuery: Connection closed');
         });
+    }
+
+    static processPacket(str, buffer, firstPacket, charOutput, PACKET_SIZE, index) {
+        if (str.includes("AuthId")) {
+            str = str.substring(str.indexOf("AuthId")).slice(0, -1);
+            buffer = buffer.slice(1488); // Update the buffer to remove the processed packet
+            firstPacket = true;
+            charOutput += str; // Add the packet data to charOutput
+        } else {
+            buffer = buffer.slice(PACKET_SIZE);
+            str = str.charCodeAt(str.length - 1) === 0 ? str.slice(18, index) : str.slice(18);
+            const dblNullIdx = this.findLastDoubleNullIndex(str);
+            str = str.substring(dblNullIdx);
+            str = str.replace(/^\x00+/, '').replace(/\x00+$/, '');
+            charOutput += str; // Add the packet data to charOutput
+        }
+        return { str, buffer, firstPacket, charOutput };
     }
 
     /**
@@ -289,18 +170,17 @@ class DBQuery {
         return buffer.toString('hex');
     }
 
-    static containsEndMarker(buffer) {
-        // Convert the buffer to a string for easier searching
-        const dataString = buffer.toString('utf8');
-        return dataString.includes(endMarker);
-    }
-
+    /**
+     * Saves the given data to a file with the specified filename.
+     * @param {string} filename - The name of the file to save the data to.
+     * @param {string} data - The data to save to the file.
+     */
     static saveToFile(filename, data) {
         fs.writeFile(filename, data, (err) => {
             if (err) {
-                console.error(`Failed to write to file: ${err.message}`);
+                global.appLogger.error(`DBQuery: Failed to write to file: ${err.message}`);
             } else {
-                console.log(`Data successfully written to ${filename}`);
+                global.appLogger.info(`DBQuery: Data successfully written to ${filename}`);
             }
         });
     }
@@ -327,6 +207,13 @@ class DBQuery {
         return lastIndex;
     }
 
+    /**
+     * Finds the index of the given hex sequence at the end of the string.
+     * 
+     * @param {string} str - The input string to search.
+     * @param {string} hexSequence - The hex sequence to find.
+     * @returns {number} - The index of the hex sequence at the end of the string, or -1 if not found.
+     */
     static findHexSequenceAtEnd(str, hexSequence) {
         // Convert hex sequence to a regular expression pattern
         const pattern = hexSequence.match(/.{1,2}/g).map(b => `\\x${b}`).join('');
@@ -343,6 +230,20 @@ class DBQuery {
         } else {
             return -1; // Sequence not found at the end
         }
+    }
+
+    /**
+     * Finds the index of the end marker in the given string.
+     * @param {string} string - The input string to search.
+     * @returns {number} - The index of the end marker, or -1 if not found.
+     */
+    static findDataEndings(string) {
+        let index = -1;
+        index = DBQuery.findHexSequenceAtEnd(string, "73325b00");
+        if (index === -1) { index = DBQuery.findHexSequenceAtEnd(string, '003631'); }
+        if (index === -1) { index = DBQuery.findHexSequenceAtEnd(string, '00325b00'); }
+        if (index === -1) { index = DBQuery.findHexSequenceAtEnd(string, '005b00'); }
+        return index;
     }
 }
 
