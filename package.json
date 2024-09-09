@@ -3,7 +3,8 @@
 	"version": "2.0.0",
 	"private": true,
 	"scripts": {
-		"start": "node app"
+		"start": "node app",
+		"dbq-cli": "node DBQ-Cli.js  "
 	},
 	"description": "OuroDev Account Portal for CoH gme servers",
 	"author": {

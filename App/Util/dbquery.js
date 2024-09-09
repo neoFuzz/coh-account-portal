@@ -1,46 +1,46 @@
 const net = require('net');
 const fs = require('fs');
+const Packet = require("./Packet");
 
-/** Sent to DB to open comms. len: 36
-                                 /------\                                  /------\              */
-const INITIATE_CONN = '0xf9000000a3740ccef7030800000060c0a05f080c61f8ffffffaba4938c313c0000cdcdcd';
+/** Sent to DB to open comms. len: 36 */
+const INITIATE_CONN = '0xb1000000419805420200000000f9ffffff5369153c3c000000000000';
 
 /** ACK recieved from DBServer when it's ready. Len: 20 */
 const DB_ACK = '0x8d0000000156002d020000002400000000060000';
 
 /** send to ACK the connection. len: 36 */
-const CL_RES = '0xf500000066a607c0f7031000000060c090fd0002000000162c68070c18ca000000cdcdcd'
+const CL_RES = '0x90000000028600570400000044000000000e0000'
 
-/** DB is ready. len: 20 */
-const DB_READY = '0x90000000028600570400000044000000000e0000';
-
-/** Sent to DB to ACK it's readiness. len: 52 */
-const READY_ACK = '0x960100000fe50d4ff7031800000060c090fd0004000000162ce8bf040cdb0f20000000603f000000000086ffffffbfe5764c0000';
-
-/** packet sent by DBServer. Len 36
-                      /------\                                   /--*\              /\ */
-const x2 = '0x0b0100001d9602760600000064000000000b00000008000000c05f427301000009020018';
-
-// packet sent before DBServer sends character data
-const CONT_REQ = '0xd2010000b39d1216f7033000000060c0b0fd000e000000182c58d0bf0c0ca7fd0008000000f6031800000060f8ffffff7fa58b033094e1cc10860200';
-//                          |------|                                                                                    |--|            |--|
-const CHAR_REQ = '0xd2010000af3211a4f7033000000060c0b0fd000e000000182c58d0bf0c0ca7fd0008000000f6031800000060f8ffffff7fa51b023094e1cc10860100';
-
+// packet sent before DBServer sends character data /con 3
+const CONT_REQ = '0xfe000000649207f40a00000000a70100008000000080ffffffffa75c0a40cf2900000000'; // packet data sent to DBServer containing request for container 3 (character)
+//                          |------------------|                                            |--------------|
+//nst char_req = '0x260100007ce508520c0000001c0a00000000270200008001000080ffffffffa7dc3640cf2900080000000000'//cont 3
 /**
  * Class to handle DBQuery requests to the CoH DBServer
  */
 class DBQuery {
+    static cpacket_test(containerId) {
+        let pak = new Packet(36);
+        pak.stream.initBitStream(Buffer.from("\x00\x5d\x12\x30"), 36, 1, 1);
+        pak.hasDebugInfo = 1;
+        pak.reliable = 1; // not required but just in case
+        pak.creationTime = Date.now();
+        pak.dbAsyncContainerRequest(3, containerId, 16, null);
+
+        const responseBuffer = Buffer.from(pak.stream.data);// DBQuery.hexToBuffer(CONT_REQ); // TODO: update variable to make it dynamic with the request
+        console.log(`Node: 0x${responseBuffer.toString('hex')}\nCsrc: ${CONT_REQ}`)
+    }
     /**
      * Function to handle the communication with DBServer
      */
-    static communicate() {
+    static communicate(containerId) {
         let PACKET_SIZE = 20;
         const client = new net.Socket();
         let charOutput = '';
         let buffer = Buffer.alloc(0);
         let readyforChar = false;
         let firstPacket = false;
-        const endMarkerHex = '0x0200b01c0200b01c'; // potential end markers '0x0200b01c0200b01c0200b01c0200b01c'; '0x7330315b305d2e633137363320320a00'
+        const endMarkerHex = '0xcba16a0000b01c'; // potential end markers '0x0200b01c0200b01c' '0x0200b01c0200b01c0200b01c0200b01c'; '0x7330315b305d2e633137363320320a00'
         const endMarkerBuffer = this.hexToBuffer(endMarkerHex);
 
         client.connect(6997, process.env.DBSERVER, () => {
@@ -54,7 +54,6 @@ class DBQuery {
             buffer = Buffer.concat([buffer, data]);
 
             if (readyforChar) {
-
                 // Process data in chunks of 1200 bytes or larger. The buffer ends up full at some point.
                 while (buffer.length >= 1200) {
                     // Extract a packet of size 1252 bytes
@@ -66,12 +65,19 @@ class DBQuery {
                     // Optionally check if the end marker is found in the remaining buffer
                     let markerIndex = buffer.indexOf(endMarkerBuffer);
 
-                    ({ str, buffer, firstPacket, charOutput } = DBQuery.processPacket(str, buffer, firstPacket, charOutput, PACKET_SIZE, index));
+                    ({ str, buffer, firstPacket, charOutput } = DBQuery.processPacket(
+                        str, buffer, firstPacket, charOutput, PACKET_SIZE, index
+                    ));
 
-                    if (markerIndex !== -1 ) {
+                    if (markerIndex !== -1) {
+                        // cleans up a weird sequence in the data
+                        charOutput = charOutput.replace(/\x00.*?a/g, '');
+
                         // Clean up the garbage data at the end
-                        charOutput = charOutput.slice(0,charOutput.indexOf('\x0a\x00'));
+                        charOutput = charOutput.slice(0, charOutput.indexOf('\x0a\x00'));
                         buffer = buffer.slice(markerIndex + endMarkerBuffer.length); // Empties buffer
+
+                        console.log("Character retrived: " + charOutput.substring(charOutput.indexOf("\nName"), charOutput.indexOf("\nName") + 20));
 
                         // Save charOutput to a file
                         DBQuery.saveToFile('output.txt', charOutput);
@@ -97,16 +103,19 @@ class DBQuery {
                         client.write(responseBuffer);
                         global.appLogger.debug('DBQuery: Sent CL_RES!');
                         PACKET_SIZE = 20;
-                    } else if (packet.toString('hex') === DB_READY.substring(2)) {
-                        global.appLogger.debug(`DBQuery: Received DB_READY`);
-                        const responseBuffer = DBQuery.hexToBuffer(READY_ACK);
-                        client.write(responseBuffer);
-                        global.appLogger.debug('DBQuery: Sent READY_ACK!');
-                        PACKET_SIZE = 36;
                     }
 
-                    if (buffer.length >= 36) {
-                        const responseBuffer = DBQuery.hexToBuffer(CONT_REQ); // TODO: update variable to make it dynamic with the request
+                    if (buffer.length >= 20) {
+
+                        let pak = new Packet(36);
+                        pak.stream.initBitStream(Buffer.from("\x00\x5d\x12\x30"), 36, 1, 1);
+                        pak.hasDebugInfo = 1;
+                        pak.reliable = 1; // not required but just in case
+                        pak.creationTime = Date.now();
+                        pak.dbAsyncContainerRequest(3, containerId, 16, null);
+
+                        const responseBuffer = Buffer.from(pak.stream.data);// DBQuery.hexToBuffer(CONT_REQ); // TODO: update variable to make it dynamic with the request
+                        console.log(`Node: 0x${responseBuffer.toString('hex')}\nCsrc: ${CONT_REQ}`)
                         client.write(responseBuffer);
                         global.appLogger.info('DBQuery: Sent for Character data!');
                         PACKET_SIZE = 1252;
@@ -125,6 +134,17 @@ class DBQuery {
         });
     }
 
+    /**
+     * Function to process the received packet data
+     *
+     * @param {string} str - The packet data as a string
+     * @param {Buffer} buffer - The remaining buffer data
+     * @param {boolean} firstPacket - Flag indicating if it's the first packet
+     * @param {string} charOutput - The accumulated character output
+     * @param {number} PACKET_SIZE - The size of the packet
+     * @param {number} index - The index of the data ending
+     * @returns {Object} An object containing the updated values
+     */
     static processPacket(str, buffer, firstPacket, charOutput, PACKET_SIZE, index) {
         if (str.includes("AuthId")) {
             str = str.substring(str.indexOf("AuthId")).slice(0, -1);
