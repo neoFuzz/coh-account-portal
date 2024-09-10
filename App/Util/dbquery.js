@@ -21,7 +21,7 @@ const CONT_REQ = '0xfe000000649207f40a00000000a70100008000000080ffffffffa75c0a40
 class DBQuery {
     static cpacket_test(containerId) {
         let pak = new Packet(36);
-        pak.stream.initBitStream(Buffer.from("\x00\x5d\x12\x30"), 36, 1, 1);
+        pak.stream.initBitStream(Buffer.from('0'), 1472, 1, 1);
         pak.hasDebugInfo = 1;
         pak.reliable = 1; // not required but just in case
         pak.creationTime = Date.now();
@@ -108,7 +108,7 @@ class DBQuery {
                     if (buffer.length >= 20) {
 
                         let pak = new Packet(36);
-                        pak.stream.initBitStream(Buffer.from("\x00\x5d\x12\x30"), 36, 1, 1);
+                        pak.stream.initBitStream(Buffer.from("\x00"), 1472, 1, 1);
                         pak.hasDebugInfo = 1;
                         pak.reliable = 1; // not required but just in case
                         pak.creationTime = Date.now();

@@ -11,7 +11,7 @@ function timerCpuTicks() {
  * @description Represents a packet in the game protocol.
  */
 class Packet {
-    constructor(size) {
+    constructor(bufferSize, size = 0) {
         this.UID = 0;                      // Unique across all links (for debugging purposes only)
         this.id = 0;                       // Unique across a single link
         this.truncatedID = 0;
@@ -33,7 +33,7 @@ class Packet {
         this.retransCount = 0;
 
         this.checksum = 0;
-        this.stream = new BitStream(0, { byte: 0, bit: 0 }, size, 32, 1); // BitStream equivalent in JS, likely a buffer or similar stream structure
+        this.stream = new BitStream(0, { byte: 0, bit: 0 }, bufferSize, size, 0, 0); // BitStream equivalent in JS, likely a buffer or similar stream structure
         this.userData = null;              // Reference to any object or data in JS
         this.delUserDataCallback = null;   // Function reference for cleanup
     }
@@ -53,7 +53,7 @@ class Packet {
         //pktSendBitsPack(pak, 1, cb_func ? cb_func : 0);  // Handle cb_func appropriately
         /* 
         pktCreateEx(cmd=8) -> pktCreateImp -^ init, pv5 and buffer added
-            sendCmd(link, pak, 8); x
+            pktSendCmd(link, pak, 8); x
                 pktSendBitsPack(pak,1,8);
                 pktSendBits(pak,32,3);
                 pktSendBits(pak,32,1);
@@ -61,17 +61,18 @@ class Packet {
             
         */
 
-        BitStream.pktSendBitsPack(pak, 1, '1116643494');
+        //BitStream.pktSendBitsPack(pak, 1, 1116643494);
+        //BitStream.pktSendBitsPack(pak, 1, 0);
+        pak.stream.byteAlignedMode = 0;
 
         BitStream.pktSendBitsPack(pak, 1, 8); // pktsendcmd
-        
-        pak.stream.byteAlignedMode = 0;
-        
-        BitStream.pktSendBits(pak, 32, 3); // cookie_send
-        BitStream.pktSendBits(pak, 32, 1); // last_cookie_recv
-        //BitStream.pktSendBitsPack(pak, 1, '8');// net version /ba =0
 
-        BitStream.pktSendBitsPack(pak, 1, 12446320);
+        BitStream.pktSendBits(pak, 32, 3); // cookie_send
+        BitStream.pktSendBits(pak, 32, 1); // equal to last_cookie_recv
+
+        //BitStream.pktSendBitsPack(pak, 1, '\x05'); // net version /ba =0
+
+        BitStream.pktSendBitsPack(pak, 1, 11659888);
         BitStream.pktSendBitsPack(pak, 1, list_id); //3
         BitStream.pktSendBitsPack(pak, 1, cmd); // 16
         BitStream.pktSendBitsPack(pak, 1, 1);  // Assuming this constant is needed in JS too

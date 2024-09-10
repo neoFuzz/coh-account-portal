@@ -1,4 +1,4 @@
-const { Bit } = require("msnodesqlv8");
+const assert = require('assert');
 const Packet = require("./Packet");
 
 const BitStreamMode = {
@@ -12,31 +12,30 @@ const ErrorFlags = {
 
 class BitStream {
     /**
-     * @param {string} mode 
+     * @param {number} mode Write mode
      * @param {Object} cursor 
-     * @param {number} size 
-     * @param {number} maxSize 
+     * @param {number} bufferSize 
+     * @param {number} maxSize
+     * @param {number} size  
      * @param {number} bitLength 
-     * @param {*} userData 
-     * @param {number} byteAlignedMode 
-     * @param {string} errorFlags 
+     * @param {number} byteAlignedMode  
      */
-    constructor(mode, cursor = { byte: 0, bit: 0 }, size = 0, maxSize = 0, bitLength = 0, userData = null, byteAlignedMode = 0, errorFlags = 0) {
+    constructor(mode, cursor = { byte: 0, bit: 0 }, bufferSize = 0, maxSize = 0, size = 0, bitLength = 0, byteAlignedMode = 0) {
         this.mode = mode;
         this.cursor = cursor;
-        this.data = Buffer.alloc(size);
+        this.data = Buffer.alloc(bufferSize);
         this.size = size;
         this.maxSize = maxSize;
         this.bitLength = bitLength;
-        this.userData = userData;
+        this.userData = null;
         this.byteAlignedMode = byteAlignedMode;
-        this.errorFlags = errorFlags;
+        this.errorFlags = 0;
     }
 
     static get BSE_OVERFLOW() { return 1; }
 
     static ROUND_BITS_UP(bits) {
-        return Math.ceil(bits / 8) * 8;
+        return (bits + 7) & ~7;
     }
 
     static bsGetCursorBitPosition(bs) {
@@ -66,22 +65,24 @@ class BitStream {
                 const mask = (1 << numbits) - 1;
                 val &= mask;
             }
-            numbits = Math.ceil(numbits / 8) * 8;
-            if(this.cursor.bit !== 0) throw new Error('Byte aligned write must be 32 bits wide');
+            numbits = BitStream.ROUND_BITS_UP(numbits);
+            if (this.cursor.bit !== 0) throw new Error('Byte aligned write must be 32 bits wide');
         }
 
         // Ensure enough space
-        const lastByteModified = this.cursor.byte + Math.ceil((this.cursor.bit + numbits) / 8);
+        const lastByteModified = this.cursor.byte + BitStream.ROUND_BITS_UP(this.cursor.bit + numbits);
         if (lastByteModified > this.maxSize) {
             this.resize(Math.max(this.maxSize * 2, lastByteModified));
         }
 
+        // Write bits
         while (numbits > 0) {
             const availableBits = 8 - this.cursor.bit;
             const bitsToWrite = Math.min(availableBits, numbits);
             const mask = (1 << bitsToWrite) - 1;
+            const shiftedVal = (val & mask) << this.cursor.bit;
 
-            this.data[this.cursor.byte] |= ((val & mask) << this.cursor.bit);
+            this.data[this.cursor.byte] |= shiftedVal;
 
             val >>= bitsToWrite;
             numbits -= bitsToWrite;
@@ -96,7 +97,8 @@ class BitStream {
             }
         }
 
-        this.size = Math.max(this.size, this.cursor.byte + (this.cursor.bit > 0 ? 1 : 0));
+        // Update size and bitLength
+        this.size = Math.max(this.size, this.cursor.byte);
         this.bitLength = Math.max(this.bitLength, BitStream.bsGetCursorBitPosition(this));
     }
 
@@ -179,10 +181,10 @@ class BitStream {
         }
     }
 
-    roundBitsUp(bits) {
-        return (bits + 7) >>> 3;
-    }
-
+    /**
+     * Get the current cursor position in the bitstream.
+     * @returns {number}
+     */
     bsGetCursorBitPosition() {
         return (this.cursor.byte * 8) + this.cursor.bit;
     }
@@ -196,10 +198,10 @@ class BitStream {
      * @param {number} byteAligned 
      */
     initBitStream(buffer, bufferSize, initMode, byteAligned) {
-        this.data.set(buffer, 4);
+        this.data.set(buffer);
         this.maxSize = bufferSize;
         this.mode = initMode;
-        this.data[0] = '\x00';
+        this.data[0] = 0;
         this.data[1] = 0;
         this.data[2] = 0;
         this.data[3] = 0;
@@ -221,7 +223,7 @@ class BitStream {
      * @param {number} val The value to write
      */
     static bsTypedWriteBitsPack(bs, minbits, val) {
-        bs.bsWriteBits(bs, 3, 4);
+        bs.bsWriteBits(3, 4);
         BitStream.bsWriteBitsPack(bs, 5, minbits);
         BitStream.bsWriteBitsPack(bs, minbits, val);
     }
@@ -246,7 +248,7 @@ class BitStream {
             if (val < bitmask || minbits >= 32) {
                 bs.bsWriteBits(minbits, val);
                 if (success) {
-                    g_packetsizes_success[measured_bits]++;
+                    g_packetsizes_success[measured_bits]++; // be more global?
                 } else {
                     g_packetsizes_failed[measured_bits]++;
                 }
@@ -267,7 +269,8 @@ class BitStream {
     }
 
     static countBits(value) {
-        return value > 0 ? Math.floor(Math.log2(value)) + 1 : 0;
+        if (value === 0) return 1;  // Match C version's behavior for 0
+        return Math.floor(Math.log2(value)) + 1;
     }
 
     /**
@@ -277,9 +280,9 @@ class BitStream {
      * @param {number} val 
      */
     static bsTypedWriteBits(bs, numbits, val) {
-        bs.bsWriteBits(bs, 3, 3);
+        bs.bsWriteBits(3, 3);
         BitStream.bsWriteBitsPack(bs, 5, numbits);
-        bs.bsWriteBits(bs, numbits, val);
+        bs.bsWriteBits(numbits, val);
     }
 
     /**
