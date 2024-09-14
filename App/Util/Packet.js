@@ -1,10 +1,4 @@
-const BitStream = require('./BitStream');
-
-function timerCpuTicks() {
-    const hrTime = process.hrtime(); // [seconds, nanoseconds]
-    const ticks = (hrTime[0] * 1e9 + hrTime[1]) & 0xffffffff; // Convert to nanoseconds and mask to 32-bit
-    return ticks;
-}
+const { BitStream } = require('bit-stream');
 
 /**
  * @class Packet
@@ -14,28 +8,15 @@ class Packet {
     constructor(bufferSize, size = 0) {
         this.UID = 0;                      // Unique across all links (for debugging purposes only)
         this.id = 0;                       // Unique across a single link
-        this.truncatedID = 0;
 
         this.reliable = false;             // 1-bit flag
         this.hasDebugInfo = false;         // 1-bit flag
-        this.inRetransmitQueue = false;    // 1-bit flag
-        this.inSendQueue = false;          // 1-bit flag (for debugging only)
         this.compress = false;             // 1-bit flag (packet should be compressed)
-        this.ordered = false;              // 1-bit flag (packet will be handled in order)
-        this.ordered_id = 0;
 
-        this.sib_id = 0;
-        this.sib_count = 0;
-        this.sib_partnum = 0;
-
-        this.xferTime = 0;
         this.creationTime = 0;
-        this.retransCount = 0;
 
-        this.checksum = 0;
-        this.stream = new BitStream(0, { byte: 0, bit: 0 }, bufferSize, size, 0, 0); // BitStream equivalent in JS, likely a buffer or similar stream structure
+        this.stream = new BitStream(0, bufferSize, 1472); // BitStream equivalent in JS, likely a buffer or similar stream structure
         this.userData = null;              // Reference to any object or data in JS
-        this.delUserDataCallback = null;   // Function reference for cleanup
     }
 
     /**
@@ -60,23 +41,26 @@ class Packet {
             -^
             
         */
-
+        pak.hasDebugInfo = true;
         //BitStream.pktSendBitsPack(pak, 1, 1116643494);
         //BitStream.pktSendBitsPack(pak, 1, 0);
-        pak.stream.byteAlignedMode = 0;
+        pak.stream.pkt_send_bits(1, 1, pak.hasDebugInfo);
+        pak.stream.set_byte_aligned_mode(0);
+        //pak.stream.pkt_send_bits(32, 1116643494, false);
 
-        BitStream.pktSendBitsPack(pak, 1, 8); // pktsendcmd
+        pak.stream.pkt_send_bits_pack(1, 8, pak.hasDebugInfo); // pktsendcmd
 
-        BitStream.pktSendBits(pak, 32, 3); // cookie_send
-        BitStream.pktSendBits(pak, 32, 1); // equal to last_cookie_recv
+        pak.stream.pkt_send_bits(32, 3, pak.hasDebugInfo); // cookie_send
+        pak.stream.pkt_send_bits(32, 1, pak.hasDebugInfo); // equal to last_cookie_recv
 
+        //pak.stream.pkt_send_bits(1, 5, pak.hasDebugInfo);
         //BitStream.pktSendBitsPack(pak, 1, '\x05'); // net version /ba =0
 
-        BitStream.pktSendBitsPack(pak, 1, 11659888);
-        BitStream.pktSendBitsPack(pak, 1, list_id); //3
-        BitStream.pktSendBitsPack(pak, 1, cmd); // 16
-        BitStream.pktSendBitsPack(pak, 1, 1);  // Assuming this constant is needed in JS too
-        BitStream.pktSendBitsPack(pak, 1, container_id); // character container, like 2
+        pak.stream.pkt_send_bits_pack(1, 11659888, pak.hasDebugInfo);
+        pak.stream.pkt_send_bits_pack(1, list_id, pak.hasDebugInfo); //3
+        pak.stream.pkt_send_bits_pack(1, cmd, pak.hasDebugInfo); // 16
+        pak.stream.pkt_send_bits_pack(1, 1, pak.hasDebugInfo);  // Assuming this constant is needed in JS too
+        pak.stream.pkt_send_bits_pack(1, container_id, pak.hasDebugInfo); // character container, like 2
     }
 }
 

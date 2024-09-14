@@ -15,6 +15,7 @@
 		"account-portal": "file:",
 		"axios": "^1.7.4",
 		"better-sqlite3": "^11.1.2",
+		"bit-stream": "file:app/Util/bitstream/pkg",
 		"child_process": "^1.0.2",
 		"connect-redis": "^7.1.1",
 		"connect-sqlite3": ">0.9.14",

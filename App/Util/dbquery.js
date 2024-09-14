@@ -1,6 +1,7 @@
 const net = require('net');
 const fs = require('fs');
 const Packet = require("./Packet");
+const {BitStream} = require('bit-stream');
 
 /** Sent to DB to open comms. len: 36 */
 const INITIATE_CONN = '0xb1000000419805420200000000f9ffffff5369153c3c000000000000';
@@ -13,6 +14,7 @@ const CL_RES = '0x90000000028600570400000044000000000e0000'
 
 // packet sent before DBServer sends character data /con 3
 const CONT_REQ = '0xfe000000649207f40a00000000a70100008000000080ffffffffa75c0a40cf2900000000'; // packet data sent to DBServer containing request for container 3 (character)
+//                  fe000000670a08350a00000000a70100008000000080ffffffffa79c1b40cf1900000000
 //                          |------------------|                                            |--------------|
 //nst char_req = '0x260100007ce508520c0000001c0a00000000270200008001000080ffffffffa7dc3640cf2900080000000000'//cont 3
 /**
@@ -20,15 +22,15 @@ const CONT_REQ = '0xfe000000649207f40a00000000a70100008000000080ffffffffa75c0a40
  */
 class DBQuery {
     static cpacket_test(containerId) {
-        let pak = new Packet(36);
-        pak.stream.initBitStream(Buffer.from('0'), 1472, 1, 1);
+        let pak = new Packet(36,0);
+        BitStream.init_bit_stream(pak.stream, Buffer.from('0'), 1472, 1, 1);
         pak.hasDebugInfo = 1;
         pak.reliable = 1; // not required but just in case
         pak.creationTime = Date.now();
         pak.dbAsyncContainerRequest(3, containerId, 16, null);
 
-        const responseBuffer = Buffer.from(pak.stream.data);// DBQuery.hexToBuffer(CONT_REQ); // TODO: update variable to make it dynamic with the request
-        console.log(`Node: 0x${responseBuffer.toString('hex')}\nCsrc: ${CONT_REQ}`)
+        const responseBuffer = Buffer.from(pak.stream.to_hex_string());// DBQuery.hexToBuffer(CONT_REQ); // TODO: update variable to make it dynamic with the request
+        console.log(`Node: 0x${responseBuffer.toString()}\nCsrc: ${CONT_REQ}`)
     }
     /**
      * Function to handle the communication with DBServer
@@ -108,14 +110,14 @@ class DBQuery {
                     if (buffer.length >= 20) {
 
                         let pak = new Packet(36);
-                        pak.stream.initBitStream(Buffer.from("\x00"), 1472, 1, 1);
+                        BitStream.init_bit_stream(pak.stream, Buffer.from("\x00"), 1472, 1, 1);
                         pak.hasDebugInfo = 1;
                         pak.reliable = 1; // not required but just in case
                         pak.creationTime = Date.now();
                         pak.dbAsyncContainerRequest(3, containerId, 16, null);
 
-                        const responseBuffer = Buffer.from(pak.stream.data);// DBQuery.hexToBuffer(CONT_REQ); // TODO: update variable to make it dynamic with the request
-                        console.log(`Node: 0x${responseBuffer.toString('hex')}\nCsrc: ${CONT_REQ}`)
+                        const responseBuffer = Buffer.from(pak.stream.to_hex_string());// DBQuery.hexToBuffer(CONT_REQ); // TODO: update variable to make it dynamic with the request
+                        console.log(`Node: 0x${responseBuffer.toString()}\nCsrc: ${CONT_REQ}`)
                         client.write(responseBuffer);
                         global.appLogger.info('DBQuery: Sent for Character data!');
                         PACKET_SIZE = 1252;
