@@ -36,19 +36,22 @@ class Packet {
         pktCreateEx(cmd=8) -> pktCreateImp -^ init, pv5 and buffer added
             pktSendCmd(link, pak, 8); x
                 pktSendBitsPack(pak,1,8);
-                pktSendBits(pak,32,3);
-                pktSendBits(pak,32,1);
+                    typedWrite
+                        writebits 3,4 -> writebitspack 5,1 -> wbp 1,8
+                bit 1 byte 7
+                pktSendBits(pak,32,3); 8 1
+                pktSendBits(pak,32,1); 14 3
             -^
             
         */
         pak.hasDebugInfo = true;
         //BitStream.pktSendBitsPack(pak, 1, 1116643494);
         //BitStream.pktSendBitsPack(pak, 1, 0);
-        pak.stream.pkt_send_bits(1, 1, pak.hasDebugInfo);
+        //pak.stream.pkt_send_bits(1, 1116643494, false);
         pak.stream.set_byte_aligned_mode(0);
-        //pak.stream.pkt_send_bits(32, 1116643494, false);
+        //pak.stream.pkt_send_bits(1, 1, pak.hasDebugInfo);
 
-        pak.stream.pkt_send_bits_pack(1, 8, pak.hasDebugInfo); // pktsendcmd
+        pak.stream.pkt_send_bits_pack(1, 8, pak.hasDebugInfo); // pktsendcmd bb 1 7
 
         pak.stream.pkt_send_bits(32, 3, pak.hasDebugInfo); // cookie_send
         pak.stream.pkt_send_bits(32, 1, pak.hasDebugInfo); // equal to last_cookie_recv
@@ -56,11 +59,11 @@ class Packet {
         //pak.stream.pkt_send_bits(1, 5, pak.hasDebugInfo);
         //BitStream.pktSendBitsPack(pak, 1, '\x05'); // net version /ba =0
 
-        pak.stream.pkt_send_bits_pack(1, 11659888, pak.hasDebugInfo);
-        pak.stream.pkt_send_bits_pack(1, list_id, pak.hasDebugInfo); //3
-        pak.stream.pkt_send_bits_pack(1, cmd, pak.hasDebugInfo); // 16
-        pak.stream.pkt_send_bits_pack(1, 1, pak.hasDebugInfo);  // Assuming this constant is needed in JS too
-        pak.stream.pkt_send_bits_pack(1, container_id, pak.hasDebugInfo); // character container, like 2
+        pak.stream.pkt_send_bits_pack(1, '11659888', pak.hasDebugInfo); // 23 2
+        pak.stream.pkt_send_bits_pack(1, list_id, pak.hasDebugInfo); //3   24 5
+        pak.stream.pkt_send_bits_pack(1, cmd, pak.hasDebugInfo); // 16     26 4
+        pak.stream.pkt_send_bits_pack(1, 1, pak.hasDebugInfo);  //         27 7
+        pak.stream.pkt_send_bits_pack(1, container_id, pak.hasDebugInfo);//29 2  character container, like 2
     }
 }
 

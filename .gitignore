@@ -11,3 +11,4 @@ reports.user.php
 sessions
 config/cert.pem
 config/key.pem
+output.txt

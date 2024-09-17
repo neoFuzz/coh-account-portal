@@ -1,0 +1,5 @@
+{
+    "rust-analyzer.linkedProjects": [
+        "App/Util/bitstream/Cargo.toml"
+    ]
+}

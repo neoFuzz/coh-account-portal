@@ -1,12 +1,11 @@
 mod utils;
 
-use std::{cmp::max, convert::TryInto};
+use std::{
+    cmp::{max, min},
+    convert::TryInto, ffi::c_char,
+};
 use utils::set_panic_hook;
 use wasm_bindgen::prelude::*;
-
-const BITSTREAM_MODE_WRITE: u32 = 1;
-const BITSTREAM_MODE_READ: u32 = 0;
-const ERROR_FLAGS_OVERFLOW: u32 = 1;
 
 /// Constants for bit lengths
 const DATA_TYPE_BIT_LENGTH: u32 = 3;
@@ -93,7 +92,7 @@ impl BitStream {
 
     /// Write bits with a type prefix and length encoding.
     pub fn bs_typed_write_bits(bs: &mut BitStream, numbits: u32, val: u32) {
-        bs.bs_write_bits(3, BS_BITS);
+        bs.bs_write_bits(DATA_TYPE_BIT_LENGTH, BS_BITS);
         BitStream::bs_write_bits_pack(bs, DATA_LENGTH_MIN_BITS, numbits);
         bs.bs_write_bits(numbits.try_into().unwrap(), val);
     }
@@ -124,9 +123,9 @@ impl BitStream {
         }
 
         // Ensure we have enough space
-        let added: u32 = (self.cursor.bit + (numbits as usize) ).try_into().unwrap();
+        let added: usize = self.cursor.bit + (numbits as usize);
         let last_byte_modified: usize =
-            self.cursor.byte + (Self::round_bits_up(added) as usize);
+            self.cursor.byte + (Self::round_bits_up(added as u32) as usize);
 
         if last_byte_modified > self.data.len() {
             let new_size = max(
@@ -135,33 +134,126 @@ impl BitStream {
             );
             self.data.resize(new_size, 0);
             self.max_size = new_size as u32;
-            //println!("Resizing from {} to {}", self.data.len(), new_size);
         }
 
-        // Write bits
-        while numbits > 0 {
-            let bits_available = 8 - self.cursor.bit;
-            let bits_to_write = numbits.min(bits_available as u32);
-            let mask = ((1 << bits_to_write) - 1) << self.cursor.bit;
-            let write_val = (val as u8 & ((1 << bits_to_write) - 1)) << self.cursor.bit;
+        // Setup and do 32-bit copies
+        {
+            // Ensure cursor_u32 is a pointer to the byte we are modifying
+            let cursor_byte: &u8 = &self.data[self.cursor.byte];
+            let mut cursor_u32 = *cursor_byte as *const u32 as *mut u32;
+            let mut cursor_u32_bit: usize =
+                self.cursor.bit as usize + 8 * ((cursor_byte) & 3) as usize;
+            let mut old_mask = (1 << cursor_u32_bit) - 1;
+            
+            // Calculate new byte offset
+            let mut new_byte_offset = self.cursor.byte + (cursor_u32_bit >> 3);
 
-            self.data[self.cursor.byte] &= !mask;
-            self.data[self.cursor.byte] |= write_val;
-
-            self.cursor.bit += bits_to_write as usize;
-            if self.cursor.bit == 8 {
-                self.cursor.byte += 1;
-                self.cursor.bit = 0;
+            // Calculate the index relative to the start of the data
+            let data_len = self.data.len();
+            if new_byte_offset >= data_len {
+                // We need to extend the data buffer
+                let new_size = max(new_byte_offset + 1, (data_len * 2).try_into().unwrap());
+                self.data.resize(new_size, 0);
+                self.max_size = new_size as u32;
             }
 
-            val >>= bits_to_write;
-            numbits -= bits_to_write;
+            // Do shifted 32-bit masked copy
+            if cursor_u32_bit > 0 {
+                let max_bits_to_copy = 32 - cursor_u32_bit;
+                let bits_to_copy = min(numbits, max_bits_to_copy.try_into().unwrap());
+
+                unsafe {
+                    *cursor_u32 = (*cursor_u32 & old_mask)
+                        | ((val & ((1 << bits_to_copy) - 1)) << cursor_u32_bit);
+                }
+                
+                let message = format!("** masked Byte: {}", cursor_u32 as u32);
+                Self::web_log(&message);
+
+                val >>= bits_to_copy;
+                cursor_u32_bit += bits_to_copy as usize;
+
+                // Update the cursor
+                new_byte_offset = self.cursor.byte + (cursor_u32_bit >> 3);
+                if new_byte_offset >= self.data.len() {
+                    panic!("Cursor byte position out of bounds");
+                }
+
+                // Update the cursor
+                self.cursor.byte = new_byte_offset;
+                self.cursor.bit = cursor_u32_bit & 7;
+
+                numbits -= bits_to_copy;
+
+                cursor_u32 = unsafe { cursor_u32.add(cursor_u32_bit as usize / 32) };
+                let message = format!("** u32 Byte: {}", cursor_u32 as u32); //self.data[self.cursor.byte]
+                Self::web_log(&message);
+                cursor_u32_bit %= 32;
+                old_mask = (1 << cursor_u32_bit) - 1;
+            }
+
+            // Do 32-bit copy
+            if numbits == 32 {
+                debug_assert!(self.cursor.bit == 0);
+                debug_assert!(cursor_u32_bit == 0);
+
+                unsafe {
+                    *cursor_u32 = val;
+                }
+                let message = format!("** C Byte: {}", cursor_u32 as u32);
+                Self::web_log(&message);
+                new_byte_offset = self.cursor.byte + 4;
+                if new_byte_offset >= self.data.len() {
+                    panic!("Cursor byte position out of bounds");
+                }
+                self.cursor.byte = new_byte_offset;
+                numbits = 0;
+            }
+            // Do 32-bit masked copy
+            else if numbits > 0 {
+                let bits_to_copy = numbits;
+
+                debug_assert!(self.cursor.bit == 0);
+                debug_assert!(cursor_u32_bit == 0);
+
+                unsafe {
+                    *cursor_u32 = val & ((1 << bits_to_copy) - 1);
+                }
+
+                let message = format!("** C Byte: {}", cursor_u32 as u32);
+                Self::web_log(&message);
+
+                cursor_u32_bit += bits_to_copy as usize;
+
+                // Compute the new byte offset within the data vector
+                new_byte_offset = self.cursor.byte + (cursor_u32_bit >> 3);
+                if new_byte_offset >= self.data.len() {
+                    panic!("Cursor byte position out of bounds");
+                }
+
+                // Update the cursor.byte and cursor.bit fields
+                self.cursor.byte = new_byte_offset;
+                self.cursor.bit = cursor_u32_bit & 7;
+
+                numbits -= bits_to_copy;
+            }
         }
 
-        // Update size and bit_length
+        // Only increase size if cursor is beyond it.
         self.size = max(self.size, self.cursor.byte.try_into().unwrap());
-        let cursor_bit_pos = self.cursor.byte * 8 + self.cursor.bit as usize;
-        self.bit_length = max(self.bit_length, cursor_bit_pos.try_into().unwrap());
+
+        // The other bsWrite functions assume that the next byte is zeroed out
+        if self.cursor.byte < self.data.len() {
+            if self.cursor.bit == 0 {
+                self.data[self.cursor.byte] = 0;
+            }
+        }
+
+        debug_assert!(self.size <= self.max_size);
+
+        // Update the recorded bitlength of the stream.
+        let cursor_bit_pos = self.bs_get_cursor_bit_position();
+        self.bit_length = max(self.bit_length, cursor_bit_pos);
     }
 
     // Method to get the cursor bit position
@@ -226,6 +318,12 @@ impl BitStream {
         } else {
             Self::bs_write_bits_pack(self, minbits, val);
         }
+        let message = format!("** byte: {} | bit: {}",self.cursor.byte, self.cursor.bit);
+        Self::web_log(&message);
+    }
+
+    fn web_log(message: &String) {
+        web_sys::console::log_1(&message.into());
     }
 
     fn count_bits(val: u32) -> u32 {
@@ -255,29 +353,25 @@ impl BitStream {
     }
 
     #[wasm_bindgen]
-    pub fn _to_hex_string(&self) -> String {
-        let mut meaningful_data = self.data[..(self.size as usize)].to_vec();
-        meaningful_data.reverse(); // Reverse to match little-endian representation
-        
-        // Trim leading zeros
-        while meaningful_data.len() > 1 && meaningful_data[meaningful_data.len() - 1] == 0 {
-            meaningful_data.pop();
-        }
-
-        let hex_string: String = meaningful_data.iter()
-            .rev() // Reverse again to get correct order
-            .map(|byte| format!("{:02x}", byte))
-            .collect();
-
-        format!("0x{}", hex_string)
-    }
-
-    #[wasm_bindgen]
     pub fn to_hex_string(&self) -> String {
-        self.data[..self.size as usize]
+        let message1 = format!("Data stats:\n size: {}\n bitlen: {}", self.size,self.bit_length);
+        web_sys::console::log_1(&message1.into());
+
+        self.data
             .iter()
             .map(|byte| format!("{:02x}", byte))
             .collect()
+    }
+
+    fn write_u32_to_vec(data: &mut Vec<u8>, start: usize, value: u32) {
+        let bytes = value.to_le_bytes();
+        for i in 0..4 {
+            if start + i < data.len() {
+                data[start + i] = bytes[i];
+            } else {
+                data.push(bytes[i]);
+            }
+        }
     }
 }
 
