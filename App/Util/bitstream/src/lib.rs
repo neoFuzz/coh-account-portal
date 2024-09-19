@@ -2,10 +2,11 @@ mod utils;
 
 use std::{
     cmp::{max, min},
-    convert::TryInto, ffi::c_char,
+    convert::TryInto,
 };
 use utils::set_panic_hook;
 use wasm_bindgen::prelude::*;
+use web_sys::js_sys;
 
 /// Constants for bit lengths
 const DATA_TYPE_BIT_LENGTH: u32 = 3;
@@ -123,52 +124,46 @@ impl BitStream {
         }
 
         // Ensure we have enough space
-        let added: usize = self.cursor.bit + (numbits as usize);
         let last_byte_modified: usize =
-            self.cursor.byte + (Self::round_bits_up(added as u32) as usize);
+            self.cursor.byte + Self::round_bits_up((self.cursor.bit + numbits as usize).try_into().unwrap()) as usize;
 
-        if last_byte_modified > self.data.len() {
-            let new_size = max(
-                last_byte_modified,
-                (self.data.len() * 2).try_into().unwrap(),
-            );
+        // Only resize if absolutely necessary
+        if last_byte_modified > self.size as usize {
+            let new_size = last_byte_modified;
+            let msg = format!("size: {} | Resizing from {} to {}", self.size, self.data.len(), new_size);
+            Self::web_log(&msg.into());
             self.data.resize(new_size, 0);
-            self.max_size = new_size as u32;
+            //self.size = new_size as u32;
         }
 
         // Setup and do 32-bit copies
         {
-            // Ensure cursor_u32 is a pointer to the byte we are modifying
-            let cursor_byte: &u8 = &self.data[self.cursor.byte];
-            let mut cursor_u32 = *cursor_byte as *const u32 as *mut u32;
-            let mut cursor_u32_bit: usize =
-                self.cursor.bit as usize + 8 * ((cursor_byte) & 3) as usize;
+            let mut cursor_u32_bit: usize = self.cursor.bit as usize;
             let mut old_mask = (1 << cursor_u32_bit) - 1;
-            
-            // Calculate new byte offset
-            let mut new_byte_offset = self.cursor.byte + (cursor_u32_bit >> 3);
 
-            // Calculate the index relative to the start of the data
-            let data_len = self.data.len();
-            if new_byte_offset >= data_len {
-                // We need to extend the data buffer
-                let new_size = max(new_byte_offset + 1, (data_len * 2).try_into().unwrap());
-                self.data.resize(new_size, 0);
-                self.max_size = new_size as u32;
-            }
+            // Calculate new byte offset
+            let mut new_byte_offset = self.cursor.byte;
 
             // Do shifted 32-bit masked copy
             if cursor_u32_bit > 0 {
                 let max_bits_to_copy = 32 - cursor_u32_bit;
                 let bits_to_copy = min(numbits, max_bits_to_copy.try_into().unwrap());
 
-                unsafe {
-                    *cursor_u32 = (*cursor_u32 & old_mask)
-                        | ((val & ((1 << bits_to_copy) - 1)) << cursor_u32_bit);
-                }
-                
-                let message = format!("** masked Byte: {}", cursor_u32 as u32);
-                Self::web_log(&message);
+                let mut current_value = u32::from_le_bytes([
+                    self.data[new_byte_offset],
+                    self.data.get(new_byte_offset + 1).copied().unwrap_or(0),
+                    self.data.get(new_byte_offset + 2).copied().unwrap_or(0),
+                    self.data.get(new_byte_offset + 3).copied().unwrap_or(0),
+                ]);
+
+                let new_val = (current_value & old_mask)
+                    | ((val & ((1 << bits_to_copy) - 1)) << cursor_u32_bit);
+                Self::write_u32_to_vec(
+                    &mut self.data,
+                    new_byte_offset,
+                    new_val,
+                    cursor_u32_bit as u32 + bits_to_copy,
+                );
 
                 val >>= bits_to_copy;
                 cursor_u32_bit += bits_to_copy as usize;
@@ -185,9 +180,6 @@ impl BitStream {
 
                 numbits -= bits_to_copy;
 
-                cursor_u32 = unsafe { cursor_u32.add(cursor_u32_bit as usize / 32) };
-                let message = format!("** u32 Byte: {}", cursor_u32 as u32); //self.data[self.cursor.byte]
-                Self::web_log(&message);
                 cursor_u32_bit %= 32;
                 old_mask = (1 << cursor_u32_bit) - 1;
             }
@@ -197,13 +189,9 @@ impl BitStream {
                 debug_assert!(self.cursor.bit == 0);
                 debug_assert!(cursor_u32_bit == 0);
 
-                unsafe {
-                    *cursor_u32 = val;
-                }
-                let message = format!("** C Byte: {}", cursor_u32 as u32);
-                Self::web_log(&message);
+                Self::write_u32_to_vec(&mut self.data, new_byte_offset, val, 32);
                 new_byte_offset = self.cursor.byte + 4;
-                if new_byte_offset >= self.data.len() {
+                if new_byte_offset > self.data.len() {
                     panic!("Cursor byte position out of bounds");
                 }
                 self.cursor.byte = new_byte_offset;
@@ -216,18 +204,14 @@ impl BitStream {
                 debug_assert!(self.cursor.bit == 0);
                 debug_assert!(cursor_u32_bit == 0);
 
-                unsafe {
-                    *cursor_u32 = val & ((1 << bits_to_copy) - 1);
-                }
-
-                let message = format!("** C Byte: {}", cursor_u32 as u32);
-                Self::web_log(&message);
+                let masked_val = val & ((1 << bits_to_copy) - 1);
+                Self::write_u32_to_vec(&mut self.data, new_byte_offset, masked_val, bits_to_copy);
 
                 cursor_u32_bit += bits_to_copy as usize;
 
                 // Compute the new byte offset within the data vector
                 new_byte_offset = self.cursor.byte + (cursor_u32_bit >> 3);
-                if new_byte_offset >= self.data.len() {
+                if new_byte_offset > self.data.len() {
                     panic!("Cursor byte position out of bounds");
                 }
 
@@ -243,10 +227,9 @@ impl BitStream {
         self.size = max(self.size, self.cursor.byte.try_into().unwrap());
 
         // The other bsWrite functions assume that the next byte is zeroed out
-        if self.cursor.byte < self.data.len() {
-            if self.cursor.bit == 0 {
-                self.data[self.cursor.byte] = 0;
-            }
+        // Only zero out the next byte if we're not about to write to it
+        if self.cursor.byte < self.data.len() && self.cursor.bit == 0 && numbits == 0 {
+            self.data[self.cursor.byte] = 0;
         }
 
         debug_assert!(self.size <= self.max_size);
@@ -312,13 +295,20 @@ impl BitStream {
     }
 
     #[wasm_bindgen]
+    pub fn get_data_len(&mut self) -> u32 {
+        self.data.len() as u32
+    }
+
+    #[wasm_bindgen]
     pub fn pkt_send_bits_pack(&mut self, minbits: u32, val: u32, debug: bool) {
+        let message = format!("sending {} bits pack: {}", minbits, val);
+        Self::web_log(&message);
         if debug {
             Self::bs_typed_write_bits_pack(self, minbits, val);
         } else {
             Self::bs_write_bits_pack(self, minbits, val);
         }
-        let message = format!("** byte: {} | bit: {}",self.cursor.byte, self.cursor.bit);
+        let message = format!("** byte: {} | bit: {}", self.cursor.byte, self.cursor.bit);
         Self::web_log(&message);
     }
 
@@ -354,7 +344,10 @@ impl BitStream {
 
     #[wasm_bindgen]
     pub fn to_hex_string(&self) -> String {
-        let message1 = format!("Data stats:\n size: {}\n bitlen: {}", self.size,self.bit_length);
+        let message1 = format!(
+            "Data stats:\n size: {}\n bitlen: {}",
+            self.size, self.bit_length
+        );
         web_sys::console::log_1(&message1.into());
 
         self.data
@@ -363,19 +356,52 @@ impl BitStream {
             .collect()
     }
 
-    fn write_u32_to_vec(data: &mut Vec<u8>, start: usize, value: u32) {
+    fn _write_u32_to_vec(data: &mut Vec<u8>, start: usize, value: u32) {
         let bytes = value.to_le_bytes();
         for i in 0..4 {
+            // Resize only when writing beyond the current data length
+            if start + i >= data.len() {
+                let msg = format!(
+                    "Resizing: Current length = {}, Needed = {}",
+                    data.len(),
+                    start + i + 1
+                );
+                Self::web_log(&msg.into());
+                data.resize(start + i + 1, 0);
+            }
+            data[start + i] = bytes[i];
+        }
+    }
+
+    // Helper function to write u32 to Vec<u8> without oversizing
+    fn write_u32_to_vec(data: &mut Vec<u8>, start: usize, value: u32, bits_to_write: u32) {
+        let bytes = value.to_le_bytes();
+        let bytes_to_write = (bits_to_write + 7) / 8; // Round up to nearest byte
+        for i in 0..bytes_to_write as usize {
             if start + i < data.len() {
                 data[start + i] = bytes[i];
             } else {
+                // This should rarely happen due to the earlier resize
                 data.push(bytes[i]);
             }
         }
     }
+
+    /**
+     Returns a new Uint8Array from the BitStream internal data Vec<u8>.
+     This method is useful for passing the data to WebAssembly modules.
+
+     @returns {Uint8Array} The data stored in the BitStream.
+    */
+    #[wasm_bindgen]
+    pub fn get_data_array(&self) -> js_sys::Uint8Array {
+        js_sys::Uint8Array::from(&self.data[..])
+    }
 }
 
-// For WebAssembly compatibility
+/*******************************************************
+ * For WebAssembly compatibility
+ *******************************************************/
 #[no_mangle]
 pub extern "C" fn create_bitstream(capacity: usize) -> *mut BitStream {
     let bitstream = Box::new(BitStream::new(0, capacity, 1472));

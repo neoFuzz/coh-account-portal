@@ -29,9 +29,10 @@ class DBQuery {
         pak.creationTime = Date.now();
         pak.dbAsyncContainerRequest(3, containerId, 16, null);
 
-        const responseBuffer = Buffer.from(pak.stream.to_hex_string());// DBQuery.hexToBuffer(CONT_REQ); // TODO: update variable to make it dynamic with the request
-        console.log(`Node: 0x${responseBuffer.toString()}\nCsrc: ${CONT_REQ}`)
+        const responseBuffer = Buffer.from(pak.stream.get_data_array());// DBQuery.hexToBuffer(CONT_REQ); // TODO: update variable to make it dynamic with the request
+        console.log(`Node: 0x${responseBuffer.toString('hex')}\nCsrc: ${CONT_REQ}`)
     }
+
     /**
      * Function to handle the communication with DBServer
      */

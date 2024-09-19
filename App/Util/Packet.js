@@ -28,10 +28,6 @@ class Packet {
      */
     dbAsyncContainerRequest(list_id, container_id, cmd, cb_func) {
         let pak = this;
-
-        // The line below assumes casting a function pointer (cb_func) to a 32-bit value
-        // JavaScript does not have function pointers, so this needs to be handled based on your design
-        //pktSendBitsPack(pak, 1, cb_func ? cb_func : 0);  // Handle cb_func appropriately
         /* 
         pktCreateEx(cmd=8) -> pktCreateImp -^ init, pv5 and buffer added
             pktSendCmd(link, pak, 8); x
@@ -47,8 +43,8 @@ class Packet {
         pak.hasDebugInfo = true;
         //BitStream.pktSendBitsPack(pak, 1, 1116643494);
         //BitStream.pktSendBitsPack(pak, 1, 0);
-        //pak.stream.pkt_send_bits(1, 1116643494, false);
         pak.stream.set_byte_aligned_mode(0);
+        //pak.stream.pkt_send_bits_pack(8, 254, true);
         //pak.stream.pkt_send_bits(1, 1, pak.hasDebugInfo);
 
         pak.stream.pkt_send_bits_pack(1, 8, pak.hasDebugInfo); // pktsendcmd bb 1 7
@@ -56,9 +52,7 @@ class Packet {
         pak.stream.pkt_send_bits(32, 3, pak.hasDebugInfo); // cookie_send
         pak.stream.pkt_send_bits(32, 1, pak.hasDebugInfo); // equal to last_cookie_recv
 
-        //pak.stream.pkt_send_bits(1, 5, pak.hasDebugInfo);
-        //BitStream.pktSendBitsPack(pak, 1, '\x05'); // net version /ba =0
-
+        // This chain of functions has matching cursor positions as the the C source
         pak.stream.pkt_send_bits_pack(1, '11659888', pak.hasDebugInfo); // 23 2
         pak.stream.pkt_send_bits_pack(1, list_id, pak.hasDebugInfo); //3   24 5
         pak.stream.pkt_send_bits_pack(1, cmd, pak.hasDebugInfo); // 16     26 4
