@@ -24,8 +24,8 @@ pub enum BitStreamMode {
 // Define the Cursor struct
 #[derive(Debug, Clone, Copy)]
 pub struct Cursor {
-    pub byte: usize,
-    pub bit: usize,
+    pub byte: u32,
+    pub bit: u32,
 }
 
 #[derive(Debug)]
@@ -91,6 +91,16 @@ impl BitStream {
         }
     }
 
+    #[wasm_bindgen]
+    pub fn byte_aligned_mode(&self) -> u8 {
+        self.byte_aligned_mode
+    }
+
+    #[wasm_bindgen]
+    pub fn set_byte_aligned_mode(&mut self, value: u8) {
+        self.byte_aligned_mode = value;
+    }
+
     /// Write bits with a type prefix and length encoding.
     pub fn bs_typed_write_bits(bs: &mut BitStream, numbits: u32, val: u32) {
         bs.bs_write_bits(DATA_TYPE_BIT_LENGTH, BS_BITS);
@@ -101,9 +111,11 @@ impl BitStream {
     #[wasm_bindgen]
     pub fn bs_write_bits(&mut self, mut numbits: u32, mut val: u32) {
         if self.error_flags != 0 {
+            // Can't write to a stream in an erroneous state!
             return;
         }
 
+        // Make sure the given bitstream is in write mode. (or not Read mode)
         if self.mode == BitStreamMode::Read as u8 {
             panic!("BitStream is not in write mode");
         }
@@ -115,7 +127,7 @@ impl BitStream {
         }
 
         if self.byte_aligned_mode == 1 {
-            if numbits != 32 {
+            if numbits != 32 { // Mask out bits that we don't want sent
                 let mask = (1 << numbits) - 1;
                 val &= mask;
             }
@@ -124,15 +136,15 @@ impl BitStream {
         }
 
         // Ensure we have enough space
-        let last_byte_modified: usize =
-            self.cursor.byte + Self::round_bits_up((self.cursor.bit + numbits as usize).try_into().unwrap()) as usize;
+        let last_byte_modified: u32 =
+            (self.cursor.byte + Self::round_bits_up(self.cursor.bit + numbits) as u32).try_into().unwrap();
 
-        // Only resize if absolutely necessary
-        if last_byte_modified > self.size as usize {
+        // This bit of code doesn't match the C source since memAllocator has no reason to exist in Rust
+        if last_byte_modified > self.size {
             let new_size = last_byte_modified;
             let msg = format!("size: {} | Resizing from {} to {}", self.size, self.data.len(), new_size);
             Self::web_log(&msg.into());
-            self.data.resize(new_size, 0);
+            self.data.resize(new_size.try_into().unwrap(), 0);
             //self.size = new_size as u32;
         }
 
@@ -142,7 +154,7 @@ impl BitStream {
             let mut old_mask = (1 << cursor_u32_bit) - 1;
 
             // Calculate new byte offset
-            let mut new_byte_offset = self.cursor.byte;
+            let mut new_byte_offset: usize = self.cursor.byte.try_into().unwrap();
 
             // Do shifted 32-bit masked copy
             if cursor_u32_bit > 0 {
@@ -169,14 +181,14 @@ impl BitStream {
                 cursor_u32_bit += bits_to_copy as usize;
 
                 // Update the cursor
-                new_byte_offset = self.cursor.byte + (cursor_u32_bit >> 3);
+                new_byte_offset = (self.cursor.byte + (cursor_u32_bit as u32 >> 3)).try_into().unwrap(); // self.data size?
                 if new_byte_offset >= self.data.len() {
                     panic!("Cursor byte position out of bounds");
                 }
 
                 // Update the cursor
-                self.cursor.byte = new_byte_offset;
-                self.cursor.bit = cursor_u32_bit & 7;
+                self.cursor.byte = new_byte_offset as u32;
+                self.cursor.bit = (cursor_u32_bit & 7) as u32;
 
                 numbits -= bits_to_copy;
 
@@ -190,11 +202,11 @@ impl BitStream {
                 debug_assert!(cursor_u32_bit == 0);
 
                 Self::write_u32_to_vec(&mut self.data, new_byte_offset, val, 32);
-                new_byte_offset = self.cursor.byte + 4;
+                new_byte_offset = (self.cursor.byte + 4) as usize;
                 if new_byte_offset > self.data.len() {
                     panic!("Cursor byte position out of bounds");
                 }
-                self.cursor.byte = new_byte_offset;
+                self.cursor.byte = new_byte_offset as u32;
                 numbits = 0;
             }
             // Do 32-bit masked copy
@@ -210,14 +222,14 @@ impl BitStream {
                 cursor_u32_bit += bits_to_copy as usize;
 
                 // Compute the new byte offset within the data vector
-                new_byte_offset = self.cursor.byte + (cursor_u32_bit >> 3);
+                new_byte_offset = self.cursor.byte as usize + (cursor_u32_bit >> 3);
                 if new_byte_offset > self.data.len() {
                     panic!("Cursor byte position out of bounds");
                 }
 
                 // Update the cursor.byte and cursor.bit fields
-                self.cursor.byte = new_byte_offset;
-                self.cursor.bit = cursor_u32_bit & 7;
+                self.cursor.byte = new_byte_offset.try_into().unwrap();
+                self.cursor.bit = (cursor_u32_bit & 7).try_into().unwrap();
 
                 numbits -= bits_to_copy;
             }
@@ -228,8 +240,11 @@ impl BitStream {
 
         // The other bsWrite functions assume that the next byte is zeroed out
         // Only zero out the next byte if we're not about to write to it
-        if self.cursor.byte < self.data.len() && self.cursor.bit == 0 && numbits == 0 {
-            self.data[self.cursor.byte] = 0;
+        // if self.cursor.byte < self.data.len() && self.cursor.bit == 0 {
+        //     self.data[self.cursor.byte] = 0;
+        // }
+        if self.cursor.bit == 0 {
+            self.data[self.cursor.byte as usize] = 0;
         }
 
         debug_assert!(self.size <= self.max_size);
@@ -267,14 +282,17 @@ impl BitStream {
         }
 
         loop {
+            // Produce a minbits long mask that contains all 1's
             bitmask = (1 << minbits) - 1;
 
+            // If the value to be written can be represented by minbits...
             if val < bitmask || minbits >= 32 {
-                bs.bs_write_bits(minbits.try_into().unwrap(), val);
-                // Update statistics here
+                // Write the value.
+                bs.bs_write_bits(minbits, val);
+                // Update statistics here, wasn't useful.
                 break;
             }
-            bs.bs_write_bits(minbits.try_into().unwrap(), bitmask);
+            bs.bs_write_bits(minbits, bitmask);
             minbits <<= 1;
             if minbits > 32 {
                 minbits = 32;
@@ -330,16 +348,6 @@ impl BitStream {
         }
 
         bits
-    }
-
-    #[wasm_bindgen]
-    pub fn byte_aligned_mode(&self) -> u8 {
-        self.byte_aligned_mode
-    }
-
-    #[wasm_bindgen]
-    pub fn set_byte_aligned_mode(&mut self, value: u8) {
-        self.byte_aligned_mode = value;
     }
 
     #[wasm_bindgen]

@@ -41,8 +41,7 @@ class Packet {
             
         */
         pak.hasDebugInfo = true;
-        //BitStream.pktSendBitsPack(pak, 1, 1116643494);
-        //BitStream.pktSendBitsPack(pak, 1, 0);
+        
         pak.stream.set_byte_aligned_mode(0);
         //pak.stream.pkt_send_bits_pack(8, 254, true);
         //pak.stream.pkt_send_bits(1, 1, pak.hasDebugInfo);
@@ -53,7 +52,7 @@ class Packet {
         pak.stream.pkt_send_bits(32, 1, pak.hasDebugInfo); // equal to last_cookie_recv
 
         // This chain of functions has matching cursor positions as the the C source
-        pak.stream.pkt_send_bits_pack(1, '11659888', pak.hasDebugInfo); // 23 2
+        pak.stream.pkt_send_bits_pack(1, '11159888', pak.hasDebugInfo); // 23 2
         pak.stream.pkt_send_bits_pack(1, list_id, pak.hasDebugInfo); //3   24 5
         pak.stream.pkt_send_bits_pack(1, cmd, pak.hasDebugInfo); // 16     26 4
         pak.stream.pkt_send_bits_pack(1, 1, pak.hasDebugInfo);  //         27 7
