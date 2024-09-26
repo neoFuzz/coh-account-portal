@@ -1,7 +1,7 @@
 const net = require('net');
 const fs = require('fs');
 const Packet = require("./Packet");
-const {BitStream} = require('bit-stream');
+//const BitStream = require('bit-stream');
 
 /** Sent to DB to open comms. len: 36 */
 const INITIATE_CONN = '0xb1000000419805420200000000f9ffffff5369153c3c000000000000';

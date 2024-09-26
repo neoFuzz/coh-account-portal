@@ -1,0 +1,1 @@
+ emcc bitstream.cpp -o pkg/bitstream.js -s MODULARIZE=1 -s "EXPORTED_RUNTIME_METHODS=['ccall', 'cwrap']" -s ENVIRONMENT=node --bind

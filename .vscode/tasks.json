@@ -16,5 +16,22 @@
             "problemMatcher": ["$cargo"],
             "detail": "Build the Rust project using Cargo"
         }
+        //  {
+        //     "label": "Build bit-stream C-WASM Project",
+        //     "type": "shell",
+        //     "command": "emcc",
+        //     "args": [ "bitstream.c", "-o", "bit-stream.js",
+        //      "-s", "MODULARIZE=1", "-s", "EXPORT_NAME='createModule'",
+        //      "-s", "ENVIRONMENT=worker,node" ],
+        //     "options": {
+        //         "cwd": "${workspaceFolder}/App/Util/bitstream"
+        //     },
+        //     "group": {
+        //         "kind": "build",
+        //         "isDefault": true
+        //     },
+        //     "problemMatcher": ["$clang"],
+        //     "detail": "Build the C/WASM project using Emscripten"
+        // }
     ]
 }
