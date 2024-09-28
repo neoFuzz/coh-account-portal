@@ -1,7 +1,8 @@
 //const BitStream = require("./bitstream/bit-stream.js");
 //import bitstream from "./bitstream/bit-stream.js";
-//const  BitStream  = require('bit-stream');
-const Bitstream = require("./bitstream/pkg/bitstream.js");
+const { BitStream, BitStreamMode } = require('bit-stream');
+
+//const Bitstream = require("./bitstream/pkg/bitstream.js"); // working
 
 /**
  * @class Packet
@@ -19,7 +20,6 @@ class Packet {
         this.size = bufferSize;
 
         this.stream = null; // BitStream equivalent in JS, likely a buffer or similar stream structure
-        this.userData = null;              // Reference to any object or data in JS
     }
 
     /**
@@ -31,46 +31,33 @@ class Packet {
      */
     dbAsyncContainerRequest(list_id, container_id, cmd, cb_func) {
         let pak = this;
-        /* 
-        pktCreateEx(cmd=8) -> pktCreateImp -^ init, pv5 and buffer added
-            pktSendCmd(link, pak, 8); x
-                pktSendBitsPack(pak,1,8);
-                    typedWrite
-                        writebits 3,4 -> writebitspack 5,1 -> wbp 1,8
-                bit 1 byte 7
-                pktSendBits(pak,32,3); 8 1
-                pktSendBits(pak,32,1); 14 3
-            -^
-            
-        */
+
         pak.hasDebugInfo = true;
 
-        pak.stream.set_byte_aligned_mode(0);
-        //pak.stream.pkt_send_bits_pack(8, 254, true);
-        //pak.stream.pkt_send_bits(1, 1, pak.hasDebugInfo);
+        pak.stream.setByteAlignment(0);
 
-        pak.stream.pkt_send_bits_pack(1, 8, pak.hasDebugInfo); // pktsendcmd bb 1 7
+        pak.stream.typedWriteBitsPack(1, 8); // pktsendcmd 1 7
 
-        pak.stream.pkt_send_bits(32, 3, pak.hasDebugInfo); // cookie_send
-        pak.stream.pkt_send_bits(32, 1, pak.hasDebugInfo); // equal to last_cookie_recv
+        pak.stream.typedWriteBitsPack(32, 3); // cookie_send
+        pak.stream.typedWriteBitsPack(32, 1); // equal to last_cookie_recv
 
         // This chain of functions has matching cursor positions as the the C source
-        pak.stream.pkt_send_bits_pack(1, cb_func, pak.hasDebugInfo); // 23 2 > 11159888
-        pak.stream.pkt_send_bits_pack(1, list_id, pak.hasDebugInfo); //3   24 5
-        pak.stream.pkt_send_bits_pack(1, cmd, pak.hasDebugInfo); // 16     26 4
-        pak.stream.pkt_send_bits_pack(1, 1, pak.hasDebugInfo);  //         27 7
-        pak.stream.pkt_send_bits_pack(1, container_id, pak.hasDebugInfo);//29 2  character container, like 2
+        pak.stream.typedWriteBitsPack(1, cb_func); //     23 2 > 11159888
+        pak.stream.typedWriteBitsPack(1, list_id); // 3   24 5
+        pak.stream.typedWriteBitsPack(1, cmd);     // 16  26 4
+        pak.stream.typedWriteBitsPack(1, 1);       //     27 7
+        pak.stream.typedWriteBitsPack(1, container_id);// 29 2  character container, like 2
     }
 
-    async initBitStream() {
+    async _initBitStream(data) {
         const xmodule = await Bitstream();
-        await new Promise(resolve => setTimeout(resolve, 500)); // Wait for initialization
-        const buffer = new Uint8Array(4);
 
-        const bufferPointer = xmodule._malloc(buffer.length);
-        xmodule.HEAPU8.set(buffer, bufferPointer);
+        this.stream = new xmodule.BitStream(data, this.size, xmodule.BitStreamMode.Write, 1);
+    }
 
-        this.stream = new xmodule.BitStream(buffer, this.size, xmodule.BitStreamMode.Write, 1);
+    initBitStream(data) {
+
+        this.stream = new BitStream(data, this.size, BitStreamMode.Write, 1);
     }
 }
 

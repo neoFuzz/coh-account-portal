@@ -22,7 +22,7 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}/DBQ-Cli.js",
-            "console": "internalConsole"
+            "console": "integratedTerminal"
         }
     ]
 }

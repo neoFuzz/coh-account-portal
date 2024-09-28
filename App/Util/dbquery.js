@@ -22,14 +22,14 @@ const CONT_REQ = '0xfe000000649207f40a00000000a70100008000000080ffffffffa75c0a40
  */
 class DBQuery {
     static cpacket_test(containerId) {
-        let pak = new Packet(36,0);
-        BitStream.init_bit_stream(pak.stream, Buffer.from('0'), 1472, 1, 1);
+        let pak = new Packet(1472);
+        pak.initBitStream("\x00\x00\x00\x00");
         pak.hasDebugInfo = 1;
         pak.reliable = 1; // not required but just in case
         pak.creationTime = Date.now();
-        pak.dbAsyncContainerRequest(3, containerId, 16, null);
+        pak.dbAsyncContainerRequest(3, containerId, 16, 11159888);
 
-        const responseBuffer = Buffer.from(pak.stream.get_data_array());// DBQuery.hexToBuffer(CONT_REQ); // TODO: update variable to make it dynamic with the request
+        const responseBuffer = Buffer.from(pak.stream.toBuffer());
         console.log(`Node: 0x${responseBuffer.toString('hex')}\nCsrc: ${CONT_REQ}`)
     }
 
@@ -111,14 +111,16 @@ class DBQuery {
                     if (buffer.length >= 20) {
 
                         let pak = new Packet(36);
-                        BitStream.init_bit_stream(pak.stream, Buffer.from("\x00"), 1472, 1, 1);
+
+                        pak.initBitStream("\x00\x00\x00\x00");
                         pak.hasDebugInfo = 1;
                         pak.reliable = 1; // not required but just in case
                         pak.creationTime = Date.now();
-                        pak.dbAsyncContainerRequest(3, containerId, 16, null);
+                        pak.dbAsyncContainerRequest(3, containerId, 16, 11159888);
 
-                        const responseBuffer = Buffer.from(pak.stream.to_hex_string());// DBQuery.hexToBuffer(CONT_REQ); // TODO: update variable to make it dynamic with the request
-                        console.log(`Node: 0x${responseBuffer.toString()}\nCsrc: ${CONT_REQ}`)
+                        const responseBuffer = Buffer.from(pak.stream.toBuffer());
+                        console.log(`Node: 0x${responseBuffer.toString('hex')}\nCsrc: ${CONT_REQ}\nsending..`)
+
                         client.write(responseBuffer);
                         global.appLogger.info('DBQuery: Sent for Character data!');
                         PACKET_SIZE = 1252;

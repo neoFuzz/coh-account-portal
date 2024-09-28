@@ -1,1 +1,2 @@
- emcc bitstream.cpp -o pkg/bitstream.js -s MODULARIZE=1 -s "EXPORTED_RUNTIME_METHODS=['ccall', 'cwrap']" -s ENVIRONMENT=node --bind
+REM Setup Emscripten first!
+emcc bitstream.cpp -o pkg/bitstream.js -s MODULARIZE=1 -s "EXPORTED_RUNTIME_METHODS=['ccall', 'cwrap']" -s ENVIRONMENT=node --bind -s SINGLE_FILE=1 -s WASM_ASYNC_COMPILATION=0

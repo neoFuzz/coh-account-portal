@@ -28,11 +28,23 @@ public:
         BS_F32
     };
 
-    BitStream(unsigned char *buffer, unsigned int bufferSize, BitStreamMode initMode, unsigned int byteAligned = 1)
-        : data(buffer), maxSize(bufferSize), mode(initMode), byteAlignedMode(byteAligned), cursor(), errorFlags(0)
+    // Modified constructor that accepts std::string as well
+    BitStream(const std::string &input, unsigned int bufferSize, BitStreamMode initMode, unsigned int byteAligned = 1)
+        : mode(initMode), maxSize(bufferSize), byteAlignedMode(byteAligned), cursor(), errorFlags(0)
     {
-        std::memset(data, 0, bufferSize);
-        std::cout << "Initialized BitStream...\n";
+        // Allocate memory for data
+        data = new unsigned char[maxSize];
+
+        // Copy the string content into data as unsigned char*
+        std::memcpy(data, input.data(), maxSize);
+
+        std::cout << "Initialized BitStream with std::string input...\n";
+    }
+
+    // Destructor to clean up allocated memory
+    ~BitStream()
+    {
+        delete[] data;
     }
 
     void setByteAlignment(int align)
@@ -315,6 +327,15 @@ public:
     {
         return cursor.bit;
     }
+    std::string getDataArray()
+    {
+        return std::string((char *)data, size);
+    }
+    
+    // Function to return the data as Uint8Array (JS Buffer compatible)
+    emscripten::val toBuffer() {
+        return emscripten::val(emscripten::typed_memory_view(size, data));
+    }
 
 private:
     unsigned char *data;
@@ -342,36 +363,16 @@ private:
     }
 };
 
-int main()
-{
-    // Example usage of BitStream class
-    unsigned char buffer[1472];
-    BitStream bitStream(buffer, sizeof(buffer), BitStreamMode::Write, 1);
-
-    bitStream.setByteAlignment(0);       // Use un-aligned mode
-    bitStream.typedWriteBitsPack(1, 8);  // pktsendcmd bb 1 7
-    bitStream.typedWriteBitsPack(32, 3); // cookie_send
-    bitStream.typedWriteBitsPack(32, 1); // equal to last_cookie_recv
-    
-    // This chain of functions has matching cursor positions as the the C source
-    bitStream.typedWriteBitsPack(1, 11159888); // 23 2
-    bitStream.typedWriteBitsPack(1, 3);  // list_id 3   24 5
-    bitStream.typedWriteBitsPack(1, 16); // cmd 16     26 4
-    bitStream.typedWriteBitsPack(1, 1);  //         27 7
-    bitStream.typedWriteBitsPack(1, 2);  // 29 2  character container, container_id 2
-    
-
-    return 0;
-}
-
 EMSCRIPTEN_BINDINGS(bit_stream)
 {
     emscripten::class_<BitStream>("BitStream")
-        .constructor<unsigned char *, unsigned int, BitStreamMode, unsigned int>()
+        .constructor<std::string, unsigned int, BitStreamMode, unsigned int>()
         .function("setByteAlignment", &BitStream::setByteAlignment)
         .function("getByteAlignment", &BitStream::getByteAlignment)
         .function("writeBits", &BitStream::writeBits)
         .function("readBits", &BitStream::readBits)
+        .function("getDataArray", &BitStream::getDataArray)
+        .function("toBuffer", &BitStream::toBuffer)
         .function("getBitLength", &BitStream::getBitLength)
         .function("getLength", &BitStream::getLength)
         .function("getCursorBitPosition", &BitStream::getCursorBitPosition)
