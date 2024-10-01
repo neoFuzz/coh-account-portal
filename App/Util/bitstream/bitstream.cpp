@@ -11,6 +11,8 @@
 #define ROUND_BITS_UP(x) ((x + 7) & ~7)
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define DataLengthMinBits 5
+#define DataTypeBitLength 3
 
 using namespace emscripten;
 
@@ -167,9 +169,16 @@ public:
 
     void typedWriteBitsPack(unsigned int minbits, unsigned int val)
     {
-        this->writeBits(3, 4);
-        this->writeBitsPack(5, minbits);
+        this->writeBits(DataTypeBitLength, 4);
+        this->writeBitsPack(DataLengthMinBits, minbits);
         this->writeBitsPack(minbits, val);
+    }
+
+    void typedWriteBits(int numbits, unsigned int val)
+    {
+        this->writeBits(DataTypeBitLength, 3);
+        this->writeBitsPack(DataLengthMinBits, numbits);
+        this->writeBits(numbits, val);
     }
 
     void writeBitsPack(int minbits, unsigned int val)
@@ -331,9 +340,10 @@ public:
     {
         return std::string((char *)data, size);
     }
-    
+
     // Function to return the data as Uint8Array (JS Buffer compatible)
-    emscripten::val toBuffer() {
+    emscripten::val toBuffer()
+    {
         return emscripten::val(emscripten::typed_memory_view(size, data));
     }
 
@@ -382,6 +392,7 @@ EMSCRIPTEN_BINDINGS(bit_stream)
         .function("getCursorByte", &BitStream::getCursorByte)
         .function("getCursorBit", &BitStream::getCursorBit)
         .function("typedWriteBitsPack", &BitStream::typedWriteBitsPack)
+        .function("typedWriteBits", &BitStream::typedWriteBits)
         .function("writeBitsPack", &BitStream::writeBitsPack)
         .function("alignByte", &BitStream::alignByte);
     emscripten::enum_<BitStreamMode>("BitStreamMode")

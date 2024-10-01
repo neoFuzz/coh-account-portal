@@ -1,0 +1,34 @@
+{
+  "name": "bit-stream",
+  "collaborators": [
+    "Fuzzy_c <fuzzy_c@git.ourodev.com>"
+  ],
+  "author": "Fuzzy_c <fuzzy_c@git.ourodev.com>",
+  "description": "BitStream library implementation using WebAssembly for Node.js",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "gitlab.ourodev.com"
+  },
+  "files": [
+    "LICENSE_MIT"
+  ],
+  "main": "index.js",
+  "keywords": [
+    "bitstream",
+    "wasm",
+    "c++",
+    "node"
+  ],
+  "scripts": {
+    "build-bat": "emcc bitstream.cpp -o pkg/bitstream.js -s MODULARIZE=1 -s \"EXPORTED_RUNTIME_METHODS=['ccall', 'cwrap']\" -s ENVIRONMENT=node --bind -s SINGLE_FILE=1 -s WASM_ASYNC_COMPILATION=0",
+    "build": "emscripten em++ bitstream.cpp -o pkg/bitstream.js -s MODULARIZE=1 -s \"EXPORTED_RUNTIME_METHODS=['ccall', 'cwrap']\" -s ENVIRONMENT=node --bind -s SINGLE_FILE=1 -s WASM_ASYNC_COMPILATION=0"
+  },
+  "dependencies": {
+    "bit-stream": "file:"
+  },
+  "devDependencies": {
+    "emscripten-build": "^1.0.1"
+  }
+}

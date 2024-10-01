@@ -110,7 +110,7 @@ class DBQuery {
 
                     if (buffer.length >= 20) {
 
-                        let pak = new Packet(36);
+                        let pak = new Packet(29);
 
                         pak.initBitStream("\x00\x00\x00\x00");
                         pak.hasDebugInfo = 1;

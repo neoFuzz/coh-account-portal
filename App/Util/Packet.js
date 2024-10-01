@@ -38,8 +38,8 @@ class Packet {
 
         pak.stream.typedWriteBitsPack(1, 8); // pktsendcmd 1 7
 
-        pak.stream.typedWriteBitsPack(32, 3); // cookie_send
-        pak.stream.typedWriteBitsPack(32, 1); // equal to last_cookie_recv
+        pak.stream.typedWriteBits(32, 3); // cookie_send
+        pak.stream.typedWriteBits(32, 1); // equal to last_cookie_recv
 
         // This chain of functions has matching cursor positions as the the C source
         pak.stream.typedWriteBitsPack(1, cb_func); //     23 2 > 11159888
@@ -49,14 +49,7 @@ class Packet {
         pak.stream.typedWriteBitsPack(1, container_id);// 29 2  character container, like 2
     }
 
-    async _initBitStream(data) {
-        const xmodule = await Bitstream();
-
-        this.stream = new xmodule.BitStream(data, this.size, xmodule.BitStreamMode.Write, 1);
-    }
-
     initBitStream(data) {
-
         this.stream = new BitStream(data, this.size, BitStreamMode.Write, 1);
     }
 }
