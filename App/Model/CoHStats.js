@@ -4,7 +4,7 @@ const SqlServer = require('../Util/SqlServer.js');
 
 /**
  * Formats time in seconds to a string in the format HH:MM:SS.
- * @param {*} t - The time in seconds.
+ * @param {number} t - The time in seconds.
  * @returns {string} The formatted time string.
  * @param {string} [f=':'] - The separator string for the time components.
  */

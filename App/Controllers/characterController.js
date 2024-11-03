@@ -1,5 +1,5 @@
 const DataHandling = require('../Util/dataHandling.js');
-const Vars = require('../Util/Vars');
+const Vars = require('../Util/vars.js');
 const axios = require('axios');
 const https = require('https');
 
@@ -8,8 +8,9 @@ const weakSsl = process.env.portal_error_reporting !== 'dev';
 const agent = new https.Agent({ rejectUnauthorized: weakSsl });
 
 /**
+ * This class contains methods for handling character-related operations.
+ * 
  * @class CharacterController
- * @description This class contains methods for handling character-related operations.
  * @note under development
  */
 class CharacterController {
@@ -18,12 +19,14 @@ class CharacterController {
    * Possible test for server federation.
    * 
    * @note This is something under development
-   * @param {*} req 
-   * @param {*} res 
+   * @param {*} req - The request object
+   * @param {*} res - The response object
    * @returns 
    */
   static async dev(req, res) {
-    if (process.env.portal_error_reporting !== 'prod') { return res.status(400).send('Not in production'); }
+    if (process.env.portal_error_reporting !== 'prod') {
+      return res.status(400).send('Not in production');
+    }
     try {
       const { q } = req.query;
       const portalKey = process.env.PORTAL_KEY;

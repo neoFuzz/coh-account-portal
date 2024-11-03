@@ -1,9 +1,12 @@
 /**
+ * A class for managing bit fields in SQL.
  * @class BitField
- * @description A class for managing bit fields in SQL.
  */
 class BitField {
     /**
+     * Constructs a new BitField instance
+     * 
+     * @method constructor
      * @param {number} value - The initial value of the BitField
      * @constructor
      * @example
@@ -14,8 +17,9 @@ class BitField {
     }
 
     /**
+     * Returns the current value of the BitField
+     * 
      * @method getValue
-     * @description Returns the current value of the BitField
      * @returns {number} The current value of the BitField
      */
     getValue() {
@@ -23,6 +27,8 @@ class BitField {
     }
 
     /**
+     * Sets the value of the BitField.
+     * 
      * @method get
      * @param {number} n - The bit position to retrieve
      * @returns {boolean} True if the bit at position `n` is set, otherwise false
@@ -36,6 +42,8 @@ class BitField {
     }
 
     /**
+     * Sets or clears a bit in the BitField.
+     * 
      * @method set
      * @param {number} n - The bit position to set or clear
      * @param {boolean} [newValue=true] - The value to set at position `n`. Defaults to true
@@ -47,6 +55,8 @@ class BitField {
     }
 
     /**
+     * Clears a bit in the BitField.
+     * 
      * @method clear
      * @param {number} n - The bit position to clear
      */
@@ -55,8 +65,9 @@ class BitField {
     }
 
     /**
+     * Converts the BitField instance to a JSON string representation of its set bits.
+     *
      * @method toString
-     * @description Converts the BitField instance to a JSON string representation of its set bits
      * @returns {string} The JSON string representation of the BitField
      */
     toString() {

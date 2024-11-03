@@ -30,8 +30,8 @@ global.appLogger.info('Logger is successfully set up!');
 // ************ App
 
 
-DBQuery.communicate(2);
-//DBQuery.cpacket_test(2);
+//DBQuery.communicate(2);
+DBQuery.cpacket_test(2);
 
 const hexString = 'fe000000649207f40a00000000a70100008000000080ffffffffa75c0a40cf2900000000'; //cont 3
 //                           |---|                                               |

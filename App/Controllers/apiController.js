@@ -16,7 +16,6 @@ class APIController {
     /**
      * Get a character object from the database and return it as a JSON or plain text.
      *
-     *
      * @static
      * @param {*} req The request object
      * @param {*} res The response object 

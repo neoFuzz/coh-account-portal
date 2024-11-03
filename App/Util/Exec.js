@@ -1,9 +1,9 @@
 const { exec } = require('child_process');
 
 /**
- * @class Exec
- * @description Execute commands and return their output
+ * Execute commands and return their output.
  *
+ * @class Exec
  * @example
  * const exec = new Exec();
  */

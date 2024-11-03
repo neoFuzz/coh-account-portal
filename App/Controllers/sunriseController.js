@@ -79,29 +79,35 @@ class SunriseController {
         });
     }
 
+    /**
+     * Checks if a port is active on a given host.
+     * @param {string} host - The host to check
+     * @param {number} port - The port to check
+     * @returns {Promise<boolean>} - A promise that resolves to true if the port is active, false otherwise.
+     */
     async checkPort(host, port) {
         return new Promise((resolve) => {
-          const client = new net.Socket();
-      
-          client.setTimeout(3000); // Timeout after 3 seconds
-      
-          client.on('connect', () => {
-            client.destroy(); // Close the connection
-            resolve(true);   // Port is active
-          });
-      
-          client.on('error', () => {
-            resolve(false);  // Port is not active
-          });
-      
-          client.on('timeout', () => {
-            client.destroy();
-            resolve(false);  // Port is not active
-          });
-      
-          client.connect(port, host);
+            const client = new net.Socket();
+
+            client.setTimeout(3000); // Timeout after 3 seconds
+
+            client.on('connect', () => {
+                client.destroy(); // Close the connection
+                resolve(true);   // Port is active
+            });
+
+            client.on('error', () => {
+                resolve(false);  // Port is not active
+            });
+
+            client.on('timeout', () => {
+                client.destroy();
+                resolve(false);  // Port is not active
+            });
+
+            client.connect(port, host);
         });
-      }
+    }
 }
 
 module.exports = SunriseController;

@@ -154,8 +154,8 @@ app.use((req, res, next) => {
 // Setup SQL Server wrapper module
 //global.sqlServer = new (require('./App/Util/SqlServer'))(process.env.DB_CONNECTION);
 
-const DBQuery = require('./App/Util/dbquery');
-DBQuery.communicate();
+//const DBQuery = require('./App/Util/dbquery');
+//DBQuery.communicate();
 
 // Create a rate limiter middleware with specific options
 appLogger.info('Setting up rate limiter...');
@@ -182,7 +182,7 @@ for (let i in routes) {
 appLogger.info("Initiating server federation...");
 
 // Load the JSON file
-const filePath = path.join(__dirname, 'federation-config.json');
+const filePath = path.join(__dirname, 'config/federation-config.json');
 const fileContent = fs.readFileSync(filePath, 'utf8');
 
 // Parse the JSON data
