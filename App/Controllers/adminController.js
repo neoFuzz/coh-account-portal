@@ -72,20 +72,20 @@ class AdminController {
                 char_stats.TimePlayed as online_time_this_session,
                 char_stats.TotalTime as online_time_total,
                 NULL as button
-            FROM cohauth.dbo.user_account
+            FROM ${process.env.cohauth}.user_account
             LEFT JOIN (
                 SELECT AuthId, 
                        SUM(COALESCE(InfluencePoints, 0)) as inf, 
                        SUM(COALESCE(TotalTime, 0)) as TotalTime, 
                        SUM(COALESCE(Active, 0)) as Active, 
                        SUM(COALESCE(TimePlayed, 0)) as TimePlayed 
-                FROM cohdb.dbo.Ents 
+                FROM ${process.env.cohdb}.Ents 
                 GROUP BY AuthId
             ) char_stats ON user_account.uid = char_stats.AuthId
             LEFT JOIN (
                 SELECT AuthId, 
                        COUNT(*) as num 
-                FROM cohdb.dbo.Ents 
+                FROM ${process.env.cohdb}.Ents 
                 GROUP BY AuthId
             ) char_count ON user_account.uid = char_count.AuthId
         `;
@@ -151,7 +151,7 @@ class AdminController {
             SELECT
                 ContainerId, Name, StaticMapId, Level, ExperiencePoints, InfluencePoints,
                 CONVERT(VARCHAR, LastActive, 101) as LastActive, AccessLevel, NULL as button
-            FROM cohdb.dbo.ents
+            FROM ${process.env.cohdb}.ents
             WHERE AuthId = ?
         `;
 

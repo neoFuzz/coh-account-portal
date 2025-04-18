@@ -78,7 +78,7 @@ class Character {
     async checkCharacterInDB(name) {
         const SqlServer = require('../Util/SqlServer.js');
         const db = new SqlServer(process.env.DB_CONNECTION);
-        const sqlStr = `SELECT ContainerId FROM cohdb.dbo.ents WHERE Name = ?`;
+        const sqlStr = `SELECT ContainerId FROM ${process.env.cohdb}.ents WHERE Name = ?`;
 
         let data = false;
         try {

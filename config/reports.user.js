@@ -23,7 +23,7 @@ const reports = {
         description: '[Custom] Super Administrative characters audit.',
         sql: `
             SELECT Ents.Name, Ents.AuthName, Ents.AccessLevel
-            FROM cohdb.dbo.Ents
+            FROM ${process.env.cohdb}.Ents
             WHERE Ents.AccessLevel > 8
             ORDER BY Ents.AuthName, Ents.Name
         `,
@@ -42,7 +42,7 @@ module.exports = reports;
         description: '[Custom] Super Administrative characters audit.',
         sql: `
             SELECT Ents.Name, Ents.AuthName, Ents.AccessLevel
-            FROM cohdb.dbo.Ents
+            FROM ${process.env.cohdb}.Ents
             WHERE Ents.AccessLevel > 8
             ORDER BY Ents.AuthName, Ents.Name
         `,

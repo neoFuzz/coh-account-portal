@@ -90,7 +90,7 @@ class ReportsController {
             if (/@ACCOUNT_NAME|@ACCOUNT_UID|@CHARACTER_NAME|@CHARACTER_CID/.test(query)) {
                 accounts = await this.queryDatabase(
                     `SELECT user_account.uid as uid, user_account.account as account_name
-                     FROM cohauth.dbo.user_account ORDER BY account`);
+                     FROM ${process.env.cohauth}.user_account ORDER BY account`);
                 if (account && account !== 'null') {
                     if (/@ACCOUNT_NAME/.test(query)) {
                         const accountName = accounts.find(row => row.uid === account);
@@ -113,7 +113,7 @@ class ReportsController {
                 if (account && account !== 'null') {
                     characters = await this.queryDatabase(`
                         SELECT ContainerId, Name
-                        FROM cohdb.dbo.Ents
+                        FROM ${process.env.cohdb}.Ents
                         WHERE AuthId = ? ORDER BY Name`, [account]);
                     if (character && character !== 'null') {
                         if (/@CHARACTER_NAME/.test(query)) {
@@ -186,7 +186,7 @@ class ReportsController {
         return new Promise((resolve, reject) => {
             sql.fetchNumeric(
                 `SELECT user_account.uid as uid, user_account.account as account_name
-                 FROM cohauth.dbo.user_account ORDER BY account`, [],
+                 FROM ${process.env.cohauth}.user_account ORDER BY account`, [],
                 (err, rows) => {
                     if (err) return reject(err);
                     resolve(rows);
@@ -205,7 +205,7 @@ class ReportsController {
         return new Promise((resolve, reject) => {
             sql.fetchNumeric(`
                 SELECT Ents.ContainerId, Ents.Name
-                FROM cohdb.dbo.Ents
+                FROM ${process.env.cohdb}.Ents
                 WHERE AuthId = ? ORDER BY Name`,
                 [accountId], (err, rows) => {
                     if (err) return reject(err);

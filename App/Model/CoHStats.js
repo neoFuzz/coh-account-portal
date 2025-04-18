@@ -36,7 +36,7 @@ class CoHStats {
    */
   async countAccounts() {
     try {
-      const rows = await this.pool.query('SELECT count(*) as count FROM cohauth.dbo.user_account');
+      const rows = await this.pool.query(`SELECT count(*) as count FROM ${process.env.cohauth}.user_account`);
       return rows[0].count;
     } catch (error) {
       console.error('Error counting accounts:', error);
@@ -50,7 +50,7 @@ class CoHStats {
    */
   async countCharacters() {
     try {
-      const rows = await this.pool.query('SELECT count(*) as count FROM cohdb.dbo.ents');
+      const rows = await this.pool.query(`SELECT count(*) as count FROM ${process.env.cohdb}.ents`);
       return rows[0].count;
     } catch (error) {
       console.error('Error counting characters:', error);
@@ -67,8 +67,8 @@ class CoHStats {
     try {
       const rows = await this.pool.query(
         `SELECT Ents.Name, Ents.StaticMapId, Ents.AccessLevel, Ents2.LfgFlags
-        FROM cohdb.dbo.Ents
-        INNER JOIN cohdb.dbo.Ents2 ON Ents.ContainerId = Ents2.ContainerId
+        FROM ${process.env.cohdb}.Ents
+        INNER JOIN ${process.env.cohdb}.Ents2 ON Ents.ContainerId = Ents2.ContainerId
         WHERE Ents.Active > 0
         ORDER BY Name ASC`
       );

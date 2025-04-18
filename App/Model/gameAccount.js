@@ -64,8 +64,8 @@ class GameAccount {
         try {
             rows = await this.executeQuery(
                 `SELECT a.account, a.uid, a.last_login, a.last_logout, a.last_ip
-                FROM cohauth.dbo.user_account a 
-                INNER JOIN cohauth.dbo.user_auth b ON a.account = b.account WHERE a.uid = ?`,
+                FROM ${process.env.cohauth}.user_account a 
+                INNER JOIN ${process.env.cohauth}.user_auth b ON a.account = b.account WHERE a.uid = ?`,
                 [uid]
             );
             if (rows.length > 0) {
@@ -92,7 +92,7 @@ class GameAccount {
         try {
             rows = await this.executeQuery(
                 `SELECT a.account, a.uid, a.last_login, a.last_logout, a.last_ip
-                 FROM cohauth.dbo.user_account a INNER JOIN cohauth.dbo.user_auth b ON a.account = b.account 
+                 FROM ${process.env.cohauth}.user_account a INNER JOIN ${process.env.cohauth}.user_auth b ON a.account = b.account 
                  WHERE UPPER(b.account) = UPPER(?)`,
                 [username]
             );
@@ -127,7 +127,7 @@ class GameAccount {
             conn = await connection(process.env.DB_CONNECTION);
 
             // Check username uniqueness
-            const usernameCheckQuery = 'SELECT 1 FROM cohauth.dbo.user_account WHERE UPPER(account) = UPPER(?)';
+            const usernameCheckQuery = `SELECT 1 FROM ${process.env.cohauth}.user_account WHERE UPPER(account) = UPPER(?)`;
             const usernameExists = await promisify(conn.query.bind(conn))(usernameCheckQuery, [username]);
 
             if (usernameExists.length > 0) {
@@ -135,7 +135,7 @@ class GameAccount {
             }
 
             // Generate new account ID
-            const uidQuery = 'SELECT max(uid) + 1 FROM cohauth.dbo.user_account';
+            const uidQuery = `SELECT max(uid) + 1 FROM ${process.env.cohauth}.user_account`;
             const uidResult = await promisify(conn.query.bind(conn))(uidQuery);
             let uid = uidResult[0].Column0;
 
@@ -149,10 +149,10 @@ class GameAccount {
             const binaryData = Buffer.from(process.env.user_data.substring(2), 'hex');
 
             // SQL statements to execute
-            const sql1 = 'INSERT INTO cohauth.dbo.user_account (account, uid, forum_id, pay_stat) VALUES (?, ?, ?, 1014)';
-            const sql2 = `INSERT INTO cohauth.dbo.user_auth (account, password, salt, hash_type) VALUES (?, CONVERT(BINARY(128),'${hash}'), 0, 1)`;
-            const sql3 = 'INSERT INTO cohauth.dbo.user_data (uid, user_data) VALUES (?, CONVERT(binary(16), ?, 1))';
-            const sql4 = 'INSERT INTO cohauth.dbo.user_server_group (uid, server_group_id) VALUES (?, 1)';
+            const sql1 = `INSERT INTO ${process.env.cohauth}.user_account (account, uid, forum_id, pay_stat) VALUES (?, ?, ?, 1014)`;
+            const sql2 = `INSERT INTO ${process.env.cohauth}.user_auth (account, password, salt, hash_type) VALUES (?, CONVERT(BINARY(128),'${hash}'), 0, 1)`;
+            const sql3 = `INSERT INTO ${process.env.cohauth}.user_data (uid, user_data) VALUES (?, CONVERT(binary(16), ?, 1))`;
+            const sql4 = `INSERT INTO ${process.env.cohauth}.user_server_group (uid, server_group_id) VALUES (?, 1)`;
 
             // Insert database data
             await promisify(conn.beginTransaction.bind(conn))();
@@ -193,8 +193,8 @@ class GameAccount {
 
             const rows = await this.executeQuery(
                 `SELECT a.account, a.uid, a.last_login, a.last_logout, a.last_ip
-                FROM cohauth.dbo.user_account a
-                INNER JOIN cohauth.dbo.user_auth b ON a.account = b.account
+                FROM ${process.env.cohauth}.user_account a
+                INNER JOIN ${process.env.cohauth}.user_auth b ON a.account = b.account
                 WHERE UPPER(b.account) = UPPER(?) AND CONVERT(VARCHAR, b.password) = SUBSTRING(?, 1, 30)`,
                 [username, hash]
             );
@@ -225,7 +225,7 @@ class GameAccount {
             DataHandling.validatePassword(newPassword);
             const hash = `${DataHandling.binPassword(this.username, newPassword)}`;
             await this.executeQuery(
-                `UPDATE cohauth.dbo.user_auth SET password = CONVERT(BINARY(128), '${hash}') WHERE UPPER(account) = UPPER(?)`,
+                `UPDATE ${process.env.cohauth}.user_auth SET password = CONVERT(BINARY(128), '${hash}') WHERE UPPER(account) = UPPER(?)`,
                 [this.username]
             );
         } catch (error) {
@@ -241,8 +241,15 @@ class GameAccount {
      */
     async getCharacterList() {
         try {
+            let dbstring = process.env.cohdb;
             const rows = await this.executeQuery(
-                'SELECT Supergroups.Name AS SupergroupName, Attributes.Name AS ClassName, Attributes_1.Name AS OriginName, CONVERT(varchar, Ents.LastActive, 101) AS LastPlayed, Ents.*, Ents2.* FROM cohdb.dbo.Ents INNER JOIN cohdb.dbo.Ents2 ON Ents.ContainerId = Ents2.ContainerId INNER JOIN cohdb.dbo.Attributes ON Ents.Class = Attributes.Id INNER JOIN cohdb.dbo.Attributes AS Attributes_1 ON Ents.Origin = Attributes_1.Id LEFT OUTER JOIN cohdb.dbo.Supergroups ON Ents.SupergroupsId = Supergroups.ContainerId WHERE (Ents.AuthId = ?) AND Ents2.AccSvrLock IS NULL',
+                `SELECT Supergroups.Name AS SupergroupName, Attributes.Name AS ClassName, Attributes_1.Name AS OriginName,
+                 CONVERT(varchar, Ents.LastActive, 101) AS LastPlayed, Ents.*, Ents2.*
+                 FROM ${dbstring}.Ents INNER JOIN ${dbstring}.Ents2 ON Ents.ContainerId = Ents2.ContainerId
+                 INNER JOIN ${dbstring}.Attributes ON Ents.Class = Attributes.Id 
+                 INNER JOIN ${dbstring}.Attributes AS Attributes_1 ON Ents.Origin = Attributes_1.Id 
+                 LEFT OUTER JOIN ${dbstring}.Supergroups ON Ents.SupergroupsId = Supergroups.ContainerId
+                 WHERE (Ents.AuthId = ?) AND Ents2.AccSvrLock IS NULL`,
                 [this.uid]
             );
             return rows.map(row => {
@@ -261,8 +268,14 @@ class GameAccount {
     */
     async getLockedCharacters() {
         try {
+            let dbString =process.env.cohdb;
             const rows = await this.executeQuery(
-                'SELECT Supergroups.Name AS SupergroupName, Attributes.Name AS ClassName, Attributes_1.Name AS OriginName, Ents.*, Ents2.* FROM cohdb.dbo.Ents INNER JOIN cohdb.dbo.Ents2 ON Ents.ContainerId = Ents2.ContainerId INNER JOIN cohdb.dbo.Attributes ON Ents.Class = Attributes.Id INNER JOIN cohdb.dbo.Attributes AS Attributes_1 ON Ents.Origin = Attributes_1.Id LEFT OUTER JOIN cohdb.dbo.Supergroups ON Ents.SupergroupsId = Supergroups.ContainerId WHERE (Ents.AuthId = ?) AND Ents2.AccSvrLock LIKE ?',
+                `SELECT Supergroups.Name AS SupergroupName, Attributes.Name AS ClassName, Attributes_1.Name AS OriginName, Ents.*, Ents2.*
+                FROM ${dbString}.Ents INNER JOIN ${dbString}.Ents2 ON Ents.ContainerId = Ents2.ContainerId
+                INNER JOIN ${dbString}.Attributes ON Ents.Class = Attributes.Id
+                INNER JOIN ${dbString}.Attributes AS Attributes_1 ON Ents.Origin = Attributes_1.Id
+                LEFT OUTER JOIN ${dbString}.Supergroups ON Ents.SupergroupsId = Supergroups.ContainerId
+                WHERE (Ents.AuthId = ?) AND Ents2.AccSvrLock LIKE ?`,
                 [this.uid, 'transfer%']
             );
             return rows.map(row => {
@@ -290,7 +303,7 @@ class GameAccount {
     */
     async getPassword() {
         const rows = await this.executeQuery(
-            'SELECT CONVERT(VARCHAR, password) AS pass FROM cohauth.dbo.user_auth WHERE UPPER(account) = UPPER(?)',
+            `SELECT CONVERT(VARCHAR, password) AS pass FROM ${process.env.cohauth}.user_auth WHERE UPPER(account) = UPPER(?)`,
             [this.username]
         );
         return rows[0]?.pass;
@@ -304,7 +317,7 @@ class GameAccount {
      */
     async verifyHashedPassword(hashedPassword) {
         const rows = await this.executeQuery(
-            'SELECT 1 FROM cohauth.dbo.user_auth WHERE UPPER(account) = UPPER(?) AND CONVERT(VARCHAR, password) = ?',
+            `SELECT 1 FROM ${process.env.cohauth}.user_auth WHERE UPPER(account) = UPPER(?) AND CONVERT(VARCHAR, password) = ?`,
             [this.username, hashedPassword]
         );
         return rows.length > 0;
@@ -326,7 +339,7 @@ class GameAccount {
     */
     async isOnline() {
         const rows = await this.executeQuery(
-            'SELECT 1 FROM cohdb.dbo.Ents WHERE AuthId = ? AND Active > 0',
+            `SELECT 1 FROM ${process.env.cohdb}.Ents WHERE AuthId = ? AND Active > 0`,
             [this.uid]
         );
         return rows.length > 0;
@@ -339,7 +352,7 @@ class GameAccount {
     */
     async isAdmin() {
         const rows = await this.executeQuery(
-            'SELECT 1 FROM cohdb.dbo.Ents WHERE AuthId = ? AND AccessLevel >= 10',
+            `SELECT 1 FROM ${process.env.cohdb}.Ents WHERE AuthId = ? AND AccessLevel >= 10`,
             [this.uid]
         );
         return rows.length > 0;
@@ -363,12 +376,12 @@ class GameAccount {
             }
             // SQL execute query to set block_end_date using date
             await this.executeQuery(
-                'UPDATE cohauth.dbo.user_account SET block_end_date = ? WHERE UPPER(account) = UPPER(?)',
+                `UPDATE ${process.env.cohauth}.user_account SET block_end_date = ? WHERE UPPER(account) = UPPER(?)`,
                 [date, this.username]
             );
 
             await this.executeQuery(
-                'UPDATE cohauth.dbo.user_account SET block_flag = 1 WHERE UPPER(account) = UPPER(?)',
+                `UPDATE ${process.env.cohauth}.user_account SET block_flag = 1 WHERE UPPER(account) = UPPER(?)`,
                 [this.username]
             );
         } catch (error) {

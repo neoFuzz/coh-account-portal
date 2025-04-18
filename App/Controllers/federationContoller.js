@@ -33,11 +33,11 @@ class FederationController {
 
         try {
             // Get the character's ContainerId
-            const containerId = await this.queryDatabase(connectionString, 'SELECT ContainerId FROM cohdb.dbo.Ents WHERE Name = ?', [characterName]);
+            const containerId = await this.queryDatabase(connectionString, `SELECT ContainerId FROM ${process.env.cohdb}.Ents WHERE Name = ?`, [characterName]);
 
             // If the character is locked for transfer already, abort
             const isLocked = await this.queryDatabase(connectionString,
-                'SELECT AccSvrLock FROM cohdb.dbo.Ents2 WHERE ContainerId = ? AND AccSvrLock IS NOT NULL', [containerId]);
+                `SELECT AccSvrLock FROM ${process.env.cohdb}.Ents2 WHERE ContainerId = ? AND AccSvrLock IS NOT NULL`, [containerId]);
             if (isLocked.length > 0) {
                 return res.render('core/page-generic-message.pug', {
                     title: 'Character Locked',
@@ -56,7 +56,7 @@ class FederationController {
             login.character = req.body.character;
 
             // Lockout the character
-            await this.queryDatabase(connectionString, 'UPDATE cohdb.dbo.Ents2 SET AccSvrLock = ? WHERE ContainerId = ?', [substr('transfer to ' + fedServer.Name, 0, 72), containerId]);
+            await this.queryDatabase(connectionString, `UPDATE ${process.env.cohdb}.Ents2 SET AccSvrLock = ? WHERE ContainerId = ?`, [substr('transfer to ' + fedServer.Name, 0, 72), containerId]);
 
             return res.redirect(`${fedServer.Url}/federation/login?message=${encodeURIComponent(JSON.stringify(login))}`);
         } catch (error) {
@@ -188,7 +188,7 @@ class FederationController {
                 delete character.InvRecipeInvention;
             }
 
-            if (await this.queryDatabase(connectionString, 'SELECT 1 FROM cohdb.dbo.Ents WHERE Name = ?', [character.Name]).length > 0) {
+            if (await this.queryDatabase(connectionString, `SELECT 1 FROM ${process.env.cohdb}.Ents WHERE Name = ?`, [character.Name]).length > 0) {
                 const dbf = new DBFlag(character.DbFlags);
                 dbf.set(DBFlag.DBFLAG_RENAMEABLE);
                 character.DbFlags = dbf.getValue();
@@ -237,8 +237,8 @@ class FederationController {
 
         try {
             await this.queryDatabase(connectionString,
-                `UPDATE cohdb.dbo.Ents2 SET AccSvrLock = null
-                  FROM cohdb.dbo.Ents INNER JOIN cohdb.dbo.Ents2
+                `UPDATE ${process.env.cohdb}.Ents2 SET AccSvrLock = null
+                  FROM ${process.env.cohdb}.Ents INNER JOIN ${process.env.cohdb}.Ents2
                   ON Ents.ContainerId = Ents2.ContainerId WHERE Ents.Name = ?`,
                 [DataHandling.decrypt(decodeURIComponent(req.body.character), process.env.PORTAL_KEY, process.env.PORTAL_IV)]);
 

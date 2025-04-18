@@ -66,7 +66,7 @@ class APIController {
             // Fetch AuthId and ContainerId
             const [rows] = sql.dbquery(`
                 SELECT AuthId, ContainerId
-                FROM cohdb.dbo.Ents
+                FROM ${process.env.cohdb}.Ents
                 WHERE Name = ${characterName}`
             );
 
@@ -78,7 +78,7 @@ class APIController {
 
             // Check if any characters are logged in
             const activeCharacters = sql.dbquery(
-                `SELECT 1 FROM cohdb.dbo.Ents WHERE AuthId = ${authId} AND Active > 0`
+                `SELECT 1 FROM ${process.env.cohdb}.Ents WHERE AuthId = ${authId} AND Active > 0`
             );
 
             if (activeCharacters.length > 0) {
@@ -87,7 +87,7 @@ class APIController {
 
             // Check transfer lock
             const transferLock = sql.dbquery(`
-                SELECT AccSvrLock FROM cohdb.dbo.Ents2
+                SELECT AccSvrLock FROM ${process.env.cohdb}.Ents2
                 WHERE ContainerId = ${containerId}
                 AND AccSvrLock IS NOT NULL`
             );
@@ -112,12 +112,12 @@ class APIController {
 
             // Hide the character by setting AuthId to a negative value
             sql.dbquery(
-                `UPDATE cohdb.dbo.Ents SET AuthId = ${-authId} WHERE Name = ${character.name}`
+                `UPDATE ${process.env.cohdb}.Ents SET AuthId = ${-authId} WHERE Name = ${character.name}`
             );
 
             // Remove transfer block
             sql.dbquery(`
-                UPDATE cohdb.dbo.Ents2 SET AccSvrLock = null
+                UPDATE ${process.env.cohdb}.Ents2 SET AccSvrLock = null
                 WHERE ContainerId = ${containerId}`
             );
 

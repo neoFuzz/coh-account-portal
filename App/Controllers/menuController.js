@@ -1,6 +1,7 @@
 const CoHStats = require('../Model/CoHStats.js');
 const MenuItem = require('../Model/MenuItem.js');
 const Maps = require('../Model/maps.js');
+const { logger } = require('../Util/MonoLogger.js');
 
 /**
  * MenuControler class for managing the menu items and generating the menu data.
@@ -62,7 +63,12 @@ class MenuController {
         // Setup the AdminController and use a dummy request
         const AdminController = require('./adminController');
         const req = { session: { account: { username: this.account } } };
-        return await AdminController.verifyLogin(req);
+        
+        try{return await AdminController.verifyLogin(req);}
+        catch(e) { //NOSONAR
+            // do nothing
+        }
+        return false;
     }
 
     /**

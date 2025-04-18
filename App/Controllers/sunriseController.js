@@ -50,14 +50,14 @@ class SunriseController {
         xmlServers.push({ type: "auth", available: isActive });
 
         try {
-            const servers = await this.sql.query('SELECT name, inner_ip FROM cohauth.dbo.server');
+            const servers = await this.sql.query(`SELECT name, inner_ip FROM ${process.env.cohauth}.server`);
 
             for (const row of servers) {
                 const gameStats = new CoHStats();
                 const status = await gameStats.getServerStatus();
 
                 // Query for online players
-                const online = await this.sql.query('SELECT count(*) FROM cohdb.dbo.ents WHERE Active > 0');
+                const online = await this.sql.query(`SELECT count(*) FROM ${process.env.cohdb}.ents WHERE Active > 0`);
 
                 xmlServers.push({
                     type: "game",
@@ -66,8 +66,7 @@ class SunriseController {
                     players: online[0]["Column0"]
                 })
             }
-        } catch (err) {
-            // Handle error
+        } catch (err) { // NOSONAR - we return a 500 indicating a error
             res.status(500).send('Internal Server Error');
             return;
         }
